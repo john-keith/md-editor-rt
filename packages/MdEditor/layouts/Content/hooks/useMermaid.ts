@@ -4,7 +4,7 @@ import { uuid } from '~/utils';
 import { prefix, mermaidUrl, configOption } from '~/config';
 import { EditorContext } from '~/Editor';
 import { appendHandler } from '~/utils/dom';
-import { ContentPreviewProps } from '../ContentPreview';
+import { ContentPreviewProps } from '../props';
 
 /**
  * 注册katex扩展到页面
@@ -82,7 +82,7 @@ const useMermaid = (props: ContentPreviewProps) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const replaceMermaid = () => {
+  const replaceMermaid = useCallback(() => {
     if (!props.noMermaid && mermaidRef.current) {
       const mermaidSourceEles = document.querySelectorAll<HTMLElement>(
         `div.${prefix}-mermaid`
@@ -137,7 +137,9 @@ const useMermaid = (props: ContentPreviewProps) => {
         }
       });
     }
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return { mermaidRef, reRender, replaceMermaid };
 };
 

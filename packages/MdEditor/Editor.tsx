@@ -33,7 +33,8 @@ export const EditorContext = createContext<ContentType>({
   },
   showCodeRowNumber: false,
   usedLanguageText: staticTextDefault['zh-CN'],
-  previewTheme: 'default'
+  previewTheme: 'default',
+  customIcon: {}
 });
 
 const Editor = forwardRef((props: EditorProps, ref: ForwardedRef<unknown>) => {
@@ -64,7 +65,8 @@ const Editor = forwardRef((props: EditorProps, ref: ForwardedRef<unknown>) => {
     defFooters = defaultProps.defFooters,
     noIconfont = defaultProps.noIconfont,
     noUploadImg = defaultProps.noUploadImg,
-    noHighlight = defaultProps.noHighlight
+    noHighlight = defaultProps.noHighlight,
+    noImgZoomIn = defaultProps.noImgZoomIn
   } = props;
 
   const [staticProps] = useState<StaticProps>(() => {
@@ -131,7 +133,8 @@ const Editor = forwardRef((props: EditorProps, ref: ForwardedRef<unknown>) => {
         highlight,
         showCodeRowNumber,
         usedLanguageText,
-        previewTheme
+        previewTheme,
+        customIcon: props.customIcon || {}
       }}
     >
       <div
@@ -156,7 +159,7 @@ const Editor = forwardRef((props: EditorProps, ref: ForwardedRef<unknown>) => {
           showToolbarName={props.showToolbarName}
         />
         <Content
-          value={modelValue}
+          modelValue={modelValue}
           onChange={onChange}
           setting={setting}
           mdHeadingId={mdHeadingId}
@@ -177,9 +180,12 @@ const Editor = forwardRef((props: EditorProps, ref: ForwardedRef<unknown>) => {
           autoDetectCode={props.autoDetectCode}
           onBlur={props.onBlur}
           onFocus={props.onFocus}
+          onInput={props.onInput}
           completions={props.completions}
           catalogVisible={catalogVisible}
           theme={props.theme}
+          noImgZoomIn={noImgZoomIn}
+          onDrop={props.onDrop}
         />
         {footers?.length > 0 && (
           <Footer

@@ -11,6 +11,8 @@ import bus from '~/utils/event-bus';
 import { EditorContext } from '~/Editor';
 import { configOption, prefix } from '~/config';
 import { base642File } from '~/utils';
+import Icon from '~/components/Icon';
+import { ERROR_CATCHER, UPLOAD_IMAGE } from '~/static/event-name';
 
 interface ClipModalProps {
   visible: boolean;
@@ -48,7 +50,7 @@ const ClipModal = (props: ClipModalProps) => {
       // 直接定义onchange，防止创建新的实例时遗留事件
       (uploadRef.current as HTMLInputElement).onchange = () => {
         if (!window.Cropper) {
-          bus.emit(editorId, 'errorCatcher', {
+          bus.emit(editorId, ERROR_CATCHER, {
             name: 'Cropper',
             message: 'Cropper is undefined'
           });
@@ -157,9 +159,7 @@ const ClipModal = (props: ClipModalProps) => {
                   alt=""
                 />
                 <div className={`${prefix}-clip-delete`} onClick={reset}>
-                  <svg className={`${prefix}-icon`} aria-hidden="true">
-                    <use xlinkHref="#md-editor-icon-delete" />
-                  </svg>
+                  <Icon name="delete" />
                 </div>
               </div>
             ) : (
@@ -169,9 +169,7 @@ const ClipModal = (props: ClipModalProps) => {
                   (uploadRef.current as HTMLInputElement).click();
                 }}
               >
-                <svg className={`${prefix}-icon`} aria-hidden="true">
-                  <use xlinkHref="#md-editor-icon-upload" />
-                </svg>
+                <Icon name="upload" />
               </div>
             )}
           </div>
@@ -188,7 +186,7 @@ const ClipModal = (props: ClipModalProps) => {
                 const cvs = cropper.getCroppedCanvas();
                 bus.emit(
                   editorId,
-                  'uploadImage',
+                  UPLOAD_IMAGE,
                   [base642File(cvs.toDataURL('image/png'))],
                   props.onOk
                 );

@@ -24,7 +24,8 @@ const MdPreview = (props: MdPreviewProps) => {
     sanitize = defaultProps.sanitize,
     mdHeadingId = defaultProps.mdHeadingId,
     noIconfont = defaultProps.noIconfont,
-    noHighlight = defaultProps.noHighlight
+    noHighlight = defaultProps.noHighlight,
+    noImgZoomIn = defaultProps.noImgZoomIn
   } = props;
 
   const [staticProps] = useState<MdPreviewStaticProps>(() => {
@@ -59,7 +60,8 @@ const MdPreview = (props: MdPreviewProps) => {
         highlight,
         showCodeRowNumber,
         usedLanguageText,
-        previewTheme
+        previewTheme,
+        customIcon: props.customIcon || {}
       }}
     >
       <div
@@ -74,7 +76,7 @@ const MdPreview = (props: MdPreviewProps) => {
         style={props.style}
       >
         <ContentPreview
-          value={modelValue}
+          modelValue={modelValue}
           setting={setting}
           mdHeadingId={mdHeadingId}
           onHtmlChanged={onHtmlChanged}
@@ -84,6 +86,7 @@ const MdPreview = (props: MdPreviewProps) => {
           noHighlight={staticProps.noHighlight}
           noKatex={staticProps.noKatex}
           formatCopiedText={props.formatCopiedText}
+          noImgZoomIn={noImgZoomIn}
           previewOnly
           key="preview-only"
         />

@@ -11,6 +11,8 @@ import bus from '~/utils/event-bus';
 import { HeadList, MdHeadingId, Themes } from '~/type';
 import { defaultProps, prefix } from '~/config';
 import { getRelativeTop } from '~/utils';
+import { CATALOG_CHANGED, PUSH_CATALOG } from '~/static/event-name';
+
 import CatalogLink from './CatalogLink';
 
 export interface TocItem {
@@ -126,6 +128,7 @@ const MdCatalog = (props: CatalogProps) => {
   }, [scrollElement]);
 
   useEffect(() => {
+    let cacheList: HeadList[] = [];
     const findActiveHeading = throttle((list_: HeadList[]) => {
       if (list_.length === 0) {
         setList([]);
@@ -163,10 +166,11 @@ const MdCatalog = (props: CatalogProps) => {
 
       setActiveItem(activeHead);
       setList(list_);
+      cacheList = list_;
     });
 
     bus.on(editorId, {
-      name: 'catalogChanged',
+      name: CATALOG_CHANGED,
       callback: findActiveHeading
     });
 
@@ -177,19 +181,19 @@ const MdCatalog = (props: CatalogProps) => {
       scrollElement_ === document.documentElement ? window : scrollElement_;
 
     // 主动触发一次接收
-    bus.emit(editorId, 'pushCatalog');
+    bus.emit(editorId, PUSH_CATALOG);
 
     const scrollHandler = () => {
-      findActiveHeading(list);
+      findActiveHeading(cacheList);
     };
 
     scrollContainer?.addEventListener('scroll', scrollHandler);
     return () => {
-      bus.remove(editorId, 'catalogChanged', findActiveHeading);
+      bus.remove(editorId, CATALOG_CHANGED, findActiveHeading);
       scrollContainer?.removeEventListener('scroll', scrollHandler);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [offsetTop, list, mdHeadingId, getScrollElement]);
+  }, [offsetTop, mdHeadingId, getScrollElement]);
 
   return (
     <div
@@ -203,7 +207,7 @@ const MdCatalog = (props: CatalogProps) => {
           <CatalogLink
             mdHeadingId={mdHeadingId}
             tocItem={item}
-            key={item.text}
+            key={`${item.text}-${item.index}`}
             scrollElement={scrollElement}
             onClick={props.onClick}
             scrollElementOffsetTop={props.scrollElementOffsetTop}

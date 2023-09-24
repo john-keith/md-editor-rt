@@ -7,7 +7,9 @@ import {
 } from '@codemirror/state';
 import { EditorView, placeholder } from '@codemirror/view';
 import { indentUnit } from '@codemirror/language';
-import { FocusOption } from '~~/MdEditor/type';
+import { FocusOption } from '~/type';
+import bus from '~/utils/event-bus';
+import { ERROR_CATCHER } from '~/static/event-name';
 
 const toggleWith = (view: EditorView) => {
   const mc = new Compartment();
@@ -26,6 +28,8 @@ const toggleWith = (view: EditorView) => {
 
 export default class CodeMirrorUt {
   view: EditorView;
+
+  maxLength = Number.MAX_SAFE_INTEGER;
 
   // 切换tabSize的执行方法。切换时，Compartment实例需要相同
   private toggleTabSize: (extension: Extension) => boolean;
@@ -88,31 +92,58 @@ export default class CodeMirrorUt {
       deviationEnd: 0,
       // 直接替换所有文本
       replaceAll: false
-    }
+    },
+    editorId: string
   ) {
-    if (options.replaceAll) {
-      this.setValue(text);
-      return;
+    try {
+      if (options.replaceAll) {
+        this.setValue(text);
+
+        // 全部替换直接对比文本大小
+        if (text.length > this.maxLength) {
+          throw new Error('The input text is too long');
+        }
+
+        return;
+      }
+
+      // 局部替换时，模拟替换后对比大小
+      if (
+        this.view.state.doc.length - this.getSelectedText().length + text.length >
+        this.maxLength
+      ) {
+        throw new Error('The input text is too long');
+      }
+
+      const { from } = this.view.state.selection.main;
+
+      this.view.dispatch(this.view.state.replaceSelection(text));
+
+      if (options.select) {
+        const to = from + text.length + options.deviationEnd;
+        this.view.dispatch({
+          selection: EditorSelection.create(
+            [
+              EditorSelection.range(from + options.deviationStart, to),
+              EditorSelection.cursor(to)
+            ],
+            1
+          )
+        });
+      }
+
+      this.view.focus();
+    } catch (e: any) {
+      if (e.message === 'The input text is too long') {
+        bus.emit(editorId, ERROR_CATCHER, {
+          name: 'overlength',
+          message: e.message,
+          data: text
+        });
+      } else {
+        throw e;
+      }
     }
-
-    const { from } = this.view.state.selection.main;
-
-    this.view.dispatch(this.view.state.replaceSelection(text));
-
-    if (options.select) {
-      const to = from + text.length + options.deviationEnd;
-      this.view.dispatch({
-        selection: EditorSelection.create(
-          [
-            EditorSelection.range(from + options.deviationStart, to),
-            EditorSelection.cursor(to)
-          ],
-          1
-        )
-      });
-    }
-
-    this.view.focus();
   }
 
   constructor(view: EditorView) {
@@ -192,6 +223,7 @@ export default class CodeMirrorUt {
   }
 
   setMaxLength(ml: number) {
+    this.maxLength = ml;
     this.toggleMaxlength([
       EditorState.changeFilter.of((tr) => {
         return tr.newDoc.length <= ml;

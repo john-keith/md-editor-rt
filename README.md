@@ -63,7 +63,7 @@ export default () => {
 
 ```jsx
 import React, { useState } from 'react';
-import { MdEditor, MdCatalog } from 'md-editor-rt';
+import { MdPreview, MdCatalog } from 'md-editor-rt';
 import 'md-editor-rt/lib/preview.css';
 
 const scrollElement = document.documentElement;
@@ -74,7 +74,7 @@ export default () => {
 
   return (
     <>
-      <MdEditor editorId={id} modelValue={text} />
+      <MdPreview editorId={id} modelValue={text} />
       <MdCatalog editorId={id} scrollElement={scrollElement} />
     </>
   );
@@ -114,7 +114,9 @@ Inputing prompt and mark, emoji extensions
 | formatCopiedText | `(text: string) => string` | (text: string) => text | Format copied code |
 | codeStyleReverse | `boolean` | true | Code style will be reversed to dark while code block of the theme has a dark background |
 | codeStyleReverseList | `Array<string>` | ['default', 'mk-cute'] | Themes to be reversed |
-| noHighlight | `boolean` | false | never highlight code |
+| noHighlight | `boolean` | false | Highlight code or not |
+| noImgZoomIn | `boolean` | false | Enable the function of enlarging images |
+| customIcon | `CustomIcon` | {} | Customized icons |
 
 ### 🔩 MdEditor Props
 
@@ -308,9 +310,11 @@ Except for the same as `MdPreview`:
 | onChange | `value: string` | Content changed event(bind to `oninput` of `textarea`) |
 | onSave | `value: string, html: Promise<string>` | Saving content event, `ctrl+s` and clicking button will trigger it |
 | onUploadImg | `files: Array<File>, callback: (urls: Array<string>) => void` | Uploading picture event, when picture is uploading the modal will not close, please provide right urls to the callback function |
-| onError | `error: { name: string; message: string }` | Catch run-time error, `Cropper`, `fullscreen` and `prettier` are used when they are not loaded |
+| onError | `err: { name: 'Cropper' \| 'fullscreen' \| 'prettier' \| 'overlength'; message: string }` | Catch run-time error, `Cropper`, `fullscreen` and `prettier` are used when they are not loaded. And content exceeds the length limit error |
 | onBlur | `event: FocusEvent<HTMLTextAreaElement, Element>` | Textarea has lost focus |
 | onFocus | `event: FocusEvent<HTMLTextAreaElement, Element>` | Textarea has received focus |
+| onInput | `event: Event` | Element gets input |
+| onDrop | `event: DragEvent` | The event occurs when a selection is being dragged |
 
 ## 🤱🏼 Expose
 
@@ -459,135 +463,153 @@ editorRef.current?.focus(option);
 
 Use `config(option: ConfigOption)` to reconfigure `markdown-it` and so on.
 
-- codeMirrorExtensions: Customize new extensions based on theme and default extensions f codeMirror.
+### codeMirrorExtensions
 
-  Example: Editor does not render the line number of textarea by default, this extension needs to be manually added
+Customize new extensions based on theme and default extensions f codeMirror.
 
-  ```js
-  import { config } from 'md-editor-rt';
-  import { lineNumbers } from '@codemirror/view';
+Example: Editor does not render the line number of textarea by default, this extension needs to be manually added
 
-  config({
-    codeMirrorExtensions(_theme, extensions) {
-      return [...extensions, lineNumbers()];
-    }
-  });
-  ```
+```js
+import { config } from 'md-editor-rt';
+import { lineNumbers } from '@codemirror/view';
 
-- markdownItConfig: Customize extensions, attributes of `markdown-it`, etc.
+config({
+  codeMirrorExtensions(_theme, extensions) {
+    return [...extensions, lineNumbers()];
+  }
+});
+```
 
-  Example: Use `markdown-it-anchor` to render a hyperlink symbol to the right of the title
+### markdownItConfig
 
-  ```js
-  import { config } from 'md-editor-rt';
-  import ancher from 'markdown-it-anchor';
+Customize extensions, attributes of `markdown-it`, etc.
 
-  config({
-    markdownItConfig(mdit) {
-      mdit.use(ancher, {
-        permalink: true
-      });
-    }
-  });
-  ```
+Example: Use `markdown-it-anchor` to render a hyperlink symbol to the right of the title
 
-- markdownItPlugins: Select and add built-in plugins to `markdown-it`.
+```js
+import { config } from 'md-editor-rt';
+import ancher from 'markdown-it-anchor';
 
-  Example: Disable image zoom functionality.
+config({
+  markdownItConfig(mdit) {
+    mdit.use(ancher, {
+      permalink: true
+    });
+  }
+});
+```
 
-  ```js
-  import { config } from 'md-editor-v3';
+### markdownItPlugins
 
-  config({
-    markdownItPlugins(plugins) {
-      return plugins.map((p) => {
-        if (p.type === 'image') {
-          return {
-            ...p,
-            options: {
-              ...p.options,
-              // just remove classname 'md-zoom'
-              classes: ''
-            }
-          };
-        }
+Select and add built-in plugins to `markdown-it`.
 
-        return p;
-      });
-    }
-  });
-  ```
+Example: Modify the class name of the image.
 
-- editorConfig: Add more languages, reset `mermaid` template or delay rendering time:
+```js
+import { config } from 'md-editor-rt';
 
-  ```js
-  import { config } from 'md-editor-rt';
-
-  config({
-    editorConfig: {
-      languageUserDefined: { lang: StaticTextDefaultValue },
-      mermaidTemplate: {
-        flow: `flow tempalte`,
-        ...more
-      },
-      // Default 500ms. It is set to 0ms when preview only and not set.
-      renderDelay: 500
-    }
-  });
-  ```
-
-- editorExtensions: Config some dependency libraries, like highlight..
-
-  ```js
-  import { config } from 'md-editor-rt';
-
-  config({
-    editorExtensions: { iconfont: 'https://xxx.cc' }
-  });
-  ```
-
-  <details>
-    <summary>『EditorExtensions』</summary>
-
-  ```typescript
-  export interface EditorExtensions {
-    highlight?: {
-      instance?: any;
-      js?: string;
-      css?: {
-        [key: string]: {
-          light: string;
-          dark: string;
+config({
+  markdownItPlugins(plugins) {
+    return plugins.map((p) => {
+      if (p.type === 'image') {
+        return {
+          ...p,
+          options: {
+            ...p.options,
+            classes: 'my-class'
+          }
         };
+      }
+
+      return p;
+    });
+  }
+});
+```
+
+### editorConfig
+
+Add more languages, reset `mermaid` template or delay rendering time:
+
+```js
+import { config } from 'md-editor-rt';
+
+config({
+  editorConfig: {
+    languageUserDefined: { lang: StaticTextDefaultValue },
+    mermaidTemplate: {
+      flow: `flow tempalte`,
+      ...more
+    },
+    // Default 500ms. It is set to 0ms when preview only and not set.
+    renderDelay: 500
+  }
+});
+```
+
+### editorExtensions
+
+Config some dependency libraries, like highlight..
+
+```js
+import { config } from 'md-editor-rt';
+
+config({
+  editorExtensions: { iconfont: 'https://xxx.cc' }
+});
+```
+
+<details>
+  <summary>『EditorExtensions』</summary>
+
+```typescript
+export interface EditorExtensions {
+  highlight?: {
+    instance?: any;
+    js?: string;
+    css?: {
+      [key: string]: {
+        light: string;
+        dark: string;
       };
     };
-    prettier?: {
-      standaloneJs?: string;
-      parserMarkdownJs?: string;
-    };
-    cropper?: {
-      instance?: any;
-      js?: string;
-      css?: string;
-    };
-    iconfont?: string;
-    screenfull?: {
-      instance?: any;
-      js?: string;
-    };
-    mermaid?: {
-      instance?: any;
-      js?: string;
-    };
-    katex?: {
-      instance?: any;
-      js?: string;
-      css?: string;
-    };
-  }
-  ```
+  };
+  prettier?: {
+    standaloneJs?: string;
+    parserMarkdownJs?: string;
+  };
+  cropper?: {
+    instance?: any;
+    js?: string;
+    css?: string;
+  };
+  iconfont?: string;
+  screenfull?: {
+    instance?: any;
+    js?: string;
+  };
+  mermaid?: {
+    instance?: any;
+    js?: string;
+  };
+  katex?: {
+    instance?: any;
+    js?: string;
+    css?: string;
+  };
+}
+```
 
-  </details>
+</details>
+
+### 🫨 iconfontType
+
+Set the way to display icons:
+
+- `svg`: with symbol
+- `class`: with font-class
+
+If the icon is customized through the attribute `customIcon`, the customized icon will be used first.
 
 ### 🪡 Shortcut Key
 

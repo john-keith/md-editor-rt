@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { prefix, katexUrl, configOption } from '~/config';
 import { appendHandler } from '~/utils/dom';
-import { ContentPreviewProps } from '../ContentPreview';
+import { ContentPreviewProps } from '../props';
 
 /**
  * 注册katex扩展到marked
@@ -38,7 +38,8 @@ const useKatex = (props: ContentPreviewProps) => {
       appendHandler(katexScript, 'katex');
       appendHandler(katexLink);
     }
-  });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return { katexRef, katexInited };
 };
