@@ -2,8 +2,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { build, LibraryFormats } from 'vite';
 import react from '@vitejs/plugin-react';
-import dts from 'vite-plugin-dts';
 import { removeDir } from './u';
+import { buildType } from './build.type';
 
 const __dirname = fileURLToPath(new URL('..', import.meta.url));
 const resolvePath = (p: string) => path.resolve(__dirname, p);
@@ -40,25 +40,24 @@ const resolvePath = (p: string) => path.resolve(__dirname, p);
 
   removeDir(resolvePath('lib'));
 
+  buildType();
+
   await Promise.all(
     formats.map((t) => {
       return build({
         base: '/',
         publicDir: false,
+        define: {
+          // vite没有标记这个常理，在打包的时候，会将runtime-dev打包进去
+          'process.env.NODE_ENV': '"production"'
+        },
         resolve: {
           alias: {
             '~~': resolvePath('packages'),
             '~': resolvePath('packages/MdEditor')
           }
         },
-        plugins: [
-          react(),
-          t === 'es' &&
-            dts({
-              outputDir: resolvePath('lib/types'),
-              include: [resolvePath('packages')]
-            })
-        ],
+        plugins: [react()],
         css: {
           modules: {
             localsConvention: 'camelCase' // 默认只支持驼峰，修改为同事支持横线和驼峰
@@ -94,9 +93,10 @@ const resolvePath = (p: string) => path.resolve(__dirname, p);
           rollupOptions: {
             external:
               t === 'umd'
-                ? ['react']
+                ? ['react', 'react-dom']
                 : [
                     'react',
+                    'react-dom',
                     'medium-zoom',
                     'lru-cache',
                     'copy-to-clipboard',
@@ -112,7 +112,8 @@ const resolvePath = (p: string) => path.resolve(__dirname, p);
               globals:
                 t === 'umd'
                   ? {
-                      react: 'React'
+                      react: 'React',
+                      'react-dom': 'ReactDOM'
                     }
                   : {}
             }

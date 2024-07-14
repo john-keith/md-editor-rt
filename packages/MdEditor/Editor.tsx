@@ -4,7 +4,8 @@ import React, {
   useState,
   forwardRef,
   ForwardedRef,
-  useEffect
+  useEffect,
+  useRef
 } from 'react';
 import {
   useOnSave,
@@ -18,15 +19,17 @@ import {
 import ToolBar from '~/layouts/Toolbar';
 import Content from '~/layouts/Content';
 import Footer from '~/layouts/Footer';
-import { classnames } from '~/utils';
-import { prefix, staticTextDefault, defaultProps } from '~/config';
-import { ContentType, EditorProps, StaticProps, Themes } from '~/type';
+import { classnames, getNextId } from '~/utils';
+import { prefix, staticTextDefault, defaultProps, defaultEditorId } from '~/config';
+import { ContentType, EditorProps, StaticProps, TableShapeType, Themes } from '~/type';
 import bus from '~/utils/event-bus';
+import { ContentExposeParam } from './layouts/Content/type';
 
 export const EditorContext = createContext<ContentType>({
   editorId: '',
   tabWidth: 2,
   theme: 'light',
+  language: 'zh-CN',
   highlight: {
     css: '',
     js: ''
@@ -46,12 +49,11 @@ const Editor = forwardRef((props: EditorProps, ref: ForwardedRef<unknown>) => {
     toolbars = defaultProps.toolbars,
     toolbarsExclude = defaultProps.toolbarsExclude,
     defToolbars = defaultProps.defToolbars,
-    editorId = defaultProps.editorId,
     tabWidth = defaultProps.tabWidth,
     showCodeRowNumber = defaultProps.showCodeRowNumber,
     previewTheme = defaultProps.previewTheme,
     noPrettier = defaultProps.noPrettier,
-    tableShape = defaultProps.tableShape as [number, number],
+    tableShape = defaultProps.tableShape as TableShapeType,
     noMermaid = defaultProps.noMermaid,
     noKatex = defaultProps.noKatex,
     placeholder = defaultProps.placeholder,
@@ -66,12 +68,18 @@ const Editor = forwardRef((props: EditorProps, ref: ForwardedRef<unknown>) => {
     noIconfont = defaultProps.noIconfont,
     noUploadImg = defaultProps.noUploadImg,
     noHighlight = defaultProps.noHighlight,
-    noImgZoomIn = defaultProps.noImgZoomIn
+    noImgZoomIn = defaultProps.noImgZoomIn,
+    language = defaultProps.language,
+    inputBoxWitdh = defaultProps.inputBoxWitdh,
+    sanitizeMermaid = defaultProps.sanitizeMermaid,
+    transformImgUrl = defaultProps.transformImgUrl,
+    codeFoldable = defaultProps.codeFoldable,
+    autoFoldThreshold = defaultProps.autoFoldThreshold
   } = props;
 
   const [staticProps] = useState<StaticProps>(() => {
     return {
-      editorId,
+      editorId: props.editorId || getNextId(defaultEditorId + '_'),
       noKatex,
       noMermaid,
       noPrettier,
@@ -88,6 +96,8 @@ const Editor = forwardRef((props: EditorProps, ref: ForwardedRef<unknown>) => {
       scrollAuto: props.scrollAuto === undefined ? true : props.scrollAuto
     };
   });
+
+  const codeRef = useRef<ContentExposeParam>();
 
   const onScrollAutoChange = useCallback(
     (v: boolean) => {
@@ -114,15 +124,14 @@ const Editor = forwardRef((props: EditorProps, ref: ForwardedRef<unknown>) => {
   // 部分配置重构
   const [highlight, usedLanguageText, setting, updateSetting] = useConfig(props);
 
-  useExpose(ref, staticProps, catalogVisible, setting, updateSetting);
+  useExpose(ref, staticProps, catalogVisible, setting, updateSetting, codeRef);
 
   useEffect(() => {
     return () => {
       // 清空所有的事件监听
-      bus.clear(editorId);
+      bus.clear(staticProps.editorId);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [staticProps.editorId]);
 
   return (
     <EditorContext.Provider
@@ -130,6 +139,7 @@ const Editor = forwardRef((props: EditorProps, ref: ForwardedRef<unknown>) => {
         editorId: staticProps.editorId,
         tabWidth,
         theme,
+        language,
         highlight,
         showCodeRowNumber,
         usedLanguageText,
@@ -147,18 +157,21 @@ const Editor = forwardRef((props: EditorProps, ref: ForwardedRef<unknown>) => {
         ])}
         style={props.style}
       >
-        <ToolBar
-          noPrettier={staticProps.noPrettier}
-          toolbars={toolbars}
-          toolbarsExclude={toolbarsExclude}
-          setting={setting}
-          updateSetting={updateSetting}
-          tableShape={tableShape}
-          defToolbars={defToolbars}
-          noUploadImg={staticProps.noUploadImg}
-          showToolbarName={props.showToolbarName}
-        />
+        {toolbars.length > 0 && (
+          <ToolBar
+            noPrettier={staticProps.noPrettier}
+            toolbars={toolbars}
+            toolbarsExclude={toolbarsExclude}
+            setting={setting}
+            updateSetting={updateSetting}
+            tableShape={tableShape}
+            defToolbars={defToolbars}
+            noUploadImg={staticProps.noUploadImg}
+            showToolbarName={props.showToolbarName}
+          />
+        )}
         <Content
+          ref={codeRef}
           modelValue={modelValue}
           onChange={onChange}
           setting={setting}
@@ -186,8 +199,14 @@ const Editor = forwardRef((props: EditorProps, ref: ForwardedRef<unknown>) => {
           theme={props.theme}
           noImgZoomIn={noImgZoomIn}
           onDrop={props.onDrop}
+          inputBoxWitdh={inputBoxWitdh}
+          onInputBoxWitdhChange={props.onInputBoxWitdhChange}
+          sanitizeMermaid={sanitizeMermaid}
+          transformImgUrl={transformImgUrl}
+          codeFoldable={codeFoldable}
+          autoFoldThreshold={autoFoldThreshold}
         />
-        {footers?.length > 0 && (
+        {footers.length > 0 && (
           <Footer
             modelValue={modelValue}
             footers={footers}

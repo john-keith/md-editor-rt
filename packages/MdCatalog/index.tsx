@@ -6,7 +6,6 @@ import React, {
   MouseEvent,
   useCallback
 } from 'react';
-import { throttle } from '@vavt/util';
 import bus from '~/utils/event-bus';
 import { HeadList, MdHeadingId, Themes } from '~/type';
 import { defaultProps, prefix } from '~/config';
@@ -52,6 +51,13 @@ export interface CatalogProps {
    * 默认：0
    */
   scrollElementOffsetTop?: number;
+  /**
+   * 高亮的标题变化事件
+   *
+   * @param heading
+   * @returns
+   */
+  onActive?: (heading: HeadList | undefined) => void;
 }
 
 const MdCatalog = (props: CatalogProps) => {
@@ -129,7 +135,7 @@ const MdCatalog = (props: CatalogProps) => {
 
   useEffect(() => {
     let cacheList: HeadList[] = [];
-    const findActiveHeading = throttle((list_: HeadList[]) => {
+    const findActiveHeading = (list_: HeadList[]) => {
       if (list_.length === 0) {
         setList([]);
         return false;
@@ -167,33 +173,52 @@ const MdCatalog = (props: CatalogProps) => {
       setActiveItem(activeHead);
       setList(list_);
       cacheList = list_;
-    });
-
-    bus.on(editorId, {
-      name: CATALOG_CHANGED,
-      callback: findActiveHeading
-    });
-
-    const scrollElement_ = getScrollElement();
+    };
 
     // 滚动区域为document.documentElement需要把监听事件绑定在window上
-    const scrollContainer =
-      scrollElement_ === document.documentElement ? window : scrollElement_;
+    let scrollContainer: HTMLElement | Window = window;
 
-    // 主动触发一次接收
-    bus.emit(editorId, PUSH_CATALOG);
+    const findScrollContainer = () => {
+      const scrollElement_ = getScrollElement();
+
+      scrollContainer =
+        scrollElement_ === document.documentElement ? window : scrollElement_;
+    };
 
     const scrollHandler = () => {
       findActiveHeading(cacheList);
     };
 
+    const callback = (_list: Array<HeadList>) => {
+      scrollContainer?.removeEventListener('scroll', scrollHandler);
+      findActiveHeading(_list);
+      findScrollContainer();
+      scrollContainer?.addEventListener('scroll', scrollHandler);
+    };
+
+    bus.on(editorId, {
+      name: CATALOG_CHANGED,
+      callback
+    });
+
+    // 主动触发一次接收
+    bus.emit(editorId, PUSH_CATALOG);
+
+    findScrollContainer();
+
     scrollContainer?.addEventListener('scroll', scrollHandler);
     return () => {
-      bus.remove(editorId, CATALOG_CHANGED, findActiveHeading);
+      bus.remove(editorId, CATALOG_CHANGED, callback);
       scrollContainer?.removeEventListener('scroll', scrollHandler);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [offsetTop, mdHeadingId, getScrollElement]);
+
+  useEffect(() => {
+    if (props.onActive) {
+      props.onActive(activeItem);
+    }
+  }, [activeItem, props]);
 
   return (
     <div

@@ -20,7 +20,7 @@
   border: 1px solid var(--md-border-color);
   position: fixed;
   z-index: @maskZIndex + 1;
-  flex-direction: column;
+  box-shadow: var(--md-modal-shadow);
 
   &-header {
     cursor: grab;
@@ -38,10 +38,10 @@
   }
 
   &-body {
-    padding: 24px;
+    padding: 20px;
     font-size: 14px;
     word-wrap: break-word;
-    height: calc(100% - 61px);
+    height: calc(100% - 43px);
     box-sizing: border-box;
   }
 
@@ -74,7 +74,6 @@
 @keyframes zoomIn {
   from {
     opacity: 0;
-    -webkit-transform: scale3d(0.3, 0.3, 0.3);
     transform: scale3d(0.3, 0.3, 0.3);
   }
 
@@ -95,7 +94,6 @@
 
   50% {
     opacity: 0;
-    -webkit-transform: scale3d(0.3, 0.3, 0.3);
     transform: scale3d(0.3, 0.3, 0.3);
   }
 

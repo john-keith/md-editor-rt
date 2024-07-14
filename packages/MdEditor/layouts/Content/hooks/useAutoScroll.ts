@@ -27,16 +27,15 @@ const useAutoScroll = (
 
   // 更新完毕后判断是否需要重新绑定滚动事件
   useEffect(() => {
-    scrollCb.clear();
     const cmScroller = document.querySelector<HTMLDivElement>(
       `#${editorId} .cm-scroller`
     );
 
     const previewEle = document.querySelector<HTMLElement>(
-      `[id="${editorId}-preview-wrapper"][data-show="true"]`
+      `[id="${editorId}-preview-wrapper"]`
     );
     const htmlEle = document.querySelector<HTMLElement>(
-      `[id="${editorId}-html-wrapper"][data-show="true"]`
+      `[id="${editorId}-html-wrapper"]`
     );
 
     if (previewEle || htmlEle) {
@@ -50,17 +49,22 @@ const useAutoScroll = (
         clear
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     html,
     props.setting.fullscreen,
     props.setting.pageFullscreen,
     props.setting.preview,
-    props.setting.htmlPreview
+    props.setting.htmlPreview,
+    editorId,
+    codeMirrorUt
   ]);
 
   useEffect(() => {
-    if (props.scrollAuto) {
+    if (
+      props.scrollAuto &&
+      !props.setting.previewOnly &&
+      (props.setting.preview || props.setting.htmlPreview)
+    ) {
       scrollCb.init();
     } else {
       scrollCb.clear();
@@ -69,8 +73,13 @@ const useAutoScroll = (
     return () => {
       scrollCb.clear();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scrollCb, props.scrollAuto]);
+  }, [
+    scrollCb,
+    props.scrollAuto,
+    props.setting.preview,
+    props.setting.htmlPreview,
+    props.setting.previewOnly
+  ]);
 };
 
 export default useAutoScroll;

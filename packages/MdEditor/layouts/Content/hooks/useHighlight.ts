@@ -10,18 +10,11 @@ import { ContentPreviewProps } from '../props';
  * @param props 内容组件props
  */
 const useHighlight = (props: ContentPreviewProps) => {
-  // 获取相应的扩展配置链接
-  const hljsConf = configOption.editorExtensions?.highlight;
-  const hljs = hljsConf?.instance;
   const { highlight } = useContext(EditorContext);
 
   // hljs是否已经提供
-  const hljsRef = useRef(hljs);
-  const [hljsInited, setHljsInited] = useState(!!hljs);
-
-  useEffect(() => {
-    updateHandler(`${prefix}-hlCss`, 'href', highlight.css);
-  }, [highlight.css]);
+  const hljsRef = useRef(configOption.editorExtensions.highlight!.instance);
+  const [hljsInited, setHljsInited] = useState(!!hljsRef.current);
 
   useEffect(() => {
     // 强制不高亮，则什么都不做
@@ -29,26 +22,37 @@ const useHighlight = (props: ContentPreviewProps) => {
       return;
     }
 
-    if (!hljsRef.current) {
-      const highlightScript = document.createElement('script');
-      highlightScript.src = highlight.js;
-      highlightScript.onload = () => {
-        hljsRef.current = window.hljs;
-        setHljsInited(true);
-      };
-      highlightScript.id = `${prefix}-hljs`;
-      appendHandler(highlightScript, 'hljs');
+    updateHandler('link', {
+      ...highlight.css,
+      rel: 'stylesheet',
+      id: `${prefix}-hlCss`
+    });
+  }, [highlight.css, props.noHighlight]);
 
-      const highlightLink = document.createElement('link');
-      highlightLink.rel = 'stylesheet';
-      highlightLink.href = highlight.css;
-      highlightLink.id = `${prefix}-hlCss`;
-
-      appendHandler(highlightLink);
+  useEffect(() => {
+    // 强制不高亮，则什么都不做
+    if (props.noHighlight || hljsRef.current) {
+      return;
     }
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    appendHandler('link', {
+      ...highlight.css,
+      rel: 'stylesheet',
+      id: `${prefix}-hlCss`
+    });
+    appendHandler(
+      'script',
+      {
+        ...highlight.js,
+        id: `${prefix}-hljs`,
+        onload() {
+          hljsRef.current = window.hljs;
+          setHljsInited(true);
+        }
+      },
+      'hljs'
+    );
+  }, [highlight.css, highlight.js, props.noHighlight]);
 
   return { hljsRef, hljsInited };
 };

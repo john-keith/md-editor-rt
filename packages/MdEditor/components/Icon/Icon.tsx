@@ -26,6 +26,7 @@ export type IconName =
   | 'fangda'
   | 'fullscreen-exit'
   | 'fullscreen'
+  | 'preview-only'
   | 'preview'
   | 'coding'
   | 'catalog'
@@ -34,7 +35,8 @@ export type IconName =
   | 'formula'
   | 'close'
   | 'delete'
-  | 'upload';
+  | 'upload'
+  | 'collapse-tips';
 
 const Icon = (props: { name: IconName }) => {
   return configOption.iconfontType === 'svg' ? (

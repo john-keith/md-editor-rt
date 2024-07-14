@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { prefix, katexUrl, configOption } from '~/config';
+import { prefix, configOption } from '~/config';
 import { appendHandler } from '~/utils/dom';
 import { ContentPreviewProps } from '../props';
 
@@ -10,36 +10,37 @@ import { ContentPreviewProps } from '../props';
  * @param marked -
  */
 const useKatex = (props: ContentPreviewProps) => {
-  // 获取相应的扩展配置链接
-  const katexConf = configOption.editorExtensions?.katex;
-  const katexIns = katexConf?.instance;
-
   // katex是否加载完成
-  const katexRef = useRef(katexIns);
-  const [katexInited, setKatexInited] = useState(!!katexIns);
+  const katexRef = useRef(configOption.editorExtensions.katex!.instance);
+  const [katexInited, setKatexInited] = useState(!!katexRef.current);
 
   useEffect(() => {
-    // 标签引入katex
-    if (!props.noKatex && !katexRef.current) {
-      const katexScript = document.createElement('script');
-
-      katexScript.src = katexConf?.js || katexUrl.js;
-      katexScript.onload = () => {
-        katexRef.current = window.katex;
-        setKatexInited(true);
-      };
-      katexScript.id = `${prefix}-katex`;
-
-      const katexLink = document.createElement('link');
-      katexLink.rel = 'stylesheet';
-      katexLink.href = katexConf?.css || katexUrl.css;
-      katexLink.id = `${prefix}-katexCss`;
-
-      appendHandler(katexScript, 'katex');
-      appendHandler(katexLink);
+    if (props.noKatex || katexRef.current) {
+      return;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    // 标签引入katex
+
+    // 获取相应的扩展配置链接
+    const { editorExtensions } = configOption;
+
+    appendHandler(
+      'script',
+      {
+        src: editorExtensions.katex!.js,
+        id: `${prefix}-katex`,
+        onload() {
+          katexRef.current = window.katex;
+          setKatexInited(true);
+        }
+      },
+      'katex'
+    );
+    appendHandler('link', {
+      rel: 'stylesheet',
+      href: editorExtensions.katex!.css,
+      id: `${prefix}-katexCss`
+    });
+  }, [props.noKatex]);
 
   return { katexRef, katexInited };
 };

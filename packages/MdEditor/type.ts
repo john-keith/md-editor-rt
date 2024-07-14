@@ -1,9 +1,10 @@
 import { CSSProperties, ReactElement } from 'react';
-import markdownit from 'markdown-it/lib';
+import markdownit from 'markdown-it';
 import { CompletionSource } from '@codemirror/autocomplete';
 import { Extension } from '@codemirror/state';
-import { KeyBinding } from '@codemirror/view';
+import { KeyBinding, EditorView } from '@codemirror/view';
 import { IconName } from './components/Icon/Icon';
+import { ToolDirective } from './utils/content-help';
 
 declare global {
   interface Window {
@@ -44,6 +45,7 @@ export interface ToolbarTips {
   fullscreen?: string;
   catalog?: string;
   preview?: string;
+  previewOnly?: string;
   htmlPreview?: string;
   github?: string;
   '-'?: string;
@@ -127,6 +129,7 @@ export interface SettingType {
   fullscreen: boolean;
   preview: boolean;
   htmlPreview: boolean;
+  previewOnly: boolean;
 }
 
 export interface HeadList {
@@ -274,7 +277,29 @@ export interface MdPreviewProps {
    * 自定义的图标
    */
   customIcon?: CustomIcon;
+  /**
+   * 转换生成的mermaid代码
+   *
+   * @param html
+   * @returns
+   */
+  sanitizeMermaid?: (html: string) => Promise<string>;
+  /**
+   * 是否开启折叠代码功能
+   * 不开启会使用div标签替代details标签
+   *
+   * @default true
+   */
+  codeFoldable?: boolean;
+  /**
+   * 触发自动折叠代码的行数阈值
+   *
+   * @default 30
+   */
+  autoFoldThreshold?: number;
 }
+
+export type TableShapeType = [number, number] | [number, number, number, number];
 
 export interface EditorProps extends MdPreviewProps {
   /**
@@ -338,7 +363,7 @@ export interface EditorProps extends MdPreviewProps {
    *
    * @default [6, 4]
    */
-  tableShape?: [number, number];
+  tableShape?: TableShapeType;
 
   /**
    * 空提示
@@ -437,18 +462,36 @@ export interface EditorProps extends MdPreviewProps {
    * @param event
    */
   onDrop?: (event: DragEvent) => void;
+  /**
+   * 输入框的默认宽度
+   *
+   * @example '100px'/'50%'
+   */
+  inputBoxWitdh?: string;
+  /**
+   * 输入框宽度变化事件
+   */
+  onInputBoxWitdhChange?: (width: string) => void;
+  /**
+   * 替换粘贴的图片链接
+   *
+   * @param t 图片链接
+   * @returns
+   */
+  transformImgUrl?: (t: string) => string | Promise<string>;
 }
 
 export interface ContentType {
   editorId: string;
   tabWidth: number;
   highlight: {
-    js: string;
-    css: string;
+    js: Partial<HTMLElementTagNameMap['script']>;
+    css: Partial<HTMLElementTagNameMap['link']>;
   };
   showCodeRowNumber: boolean;
   usedLanguageText: StaticTextDefaultValue;
   theme: Themes;
+  language: string;
   previewTheme: PreviewThemes;
   customIcon: CustomIcon;
 }
@@ -535,6 +578,41 @@ export interface ConfigOption {
       css?: string;
     };
   };
+  /**
+   * 对应editorExtensions中的cdn链接标签属性
+   *
+   * 不要尝试在editorExtensionsAttrs定义script的src\onload\id，link的rel\href\id
+   * 它们会被默认值覆盖
+   */
+  editorExtensionsAttrs: {
+    highlight?: {
+      js?: Partial<HTMLElementTagNameMap['script']>;
+      css?: CodeCssAttrs;
+    };
+    prettier?: {
+      standaloneJs?: Partial<HTMLElementTagNameMap['script']>;
+      parserMarkdownJs?: Partial<HTMLElementTagNameMap['script']>;
+    };
+    cropper?: {
+      js?: Partial<HTMLElementTagNameMap['script']>;
+      css?: Partial<HTMLElementTagNameMap['link']>;
+    };
+    iconfont?: Partial<HTMLElementTagNameMap['script']>;
+    /**
+     * class方式的图标
+     */
+    iconfontClass?: Partial<HTMLElementTagNameMap['link']>;
+    screenfull?: {
+      js?: Partial<HTMLElementTagNameMap['script']>;
+    };
+    mermaid?: {
+      js?: Partial<HTMLElementTagNameMap['script']>;
+    };
+    katex?: {
+      js?: Partial<HTMLElementTagNameMap['script']>;
+      css?: Partial<HTMLElementTagNameMap['link']>;
+    };
+  };
   editorConfig: {
     /**
      * 自定义提示语言
@@ -548,6 +626,11 @@ export interface ConfigOption {
      * 输入渲染延迟（ms）
      */
     renderDelay?: number;
+    /**
+     * 内部的弹窗、下拉框等内联zIndex
+     * @default 20000
+     */
+    zIndex?: number;
   };
   /**
    * 根据主题和内部默认的codeMirror扩展自定义新的扩展
@@ -567,7 +650,12 @@ export interface ConfigOption {
   /**
    * 自定义markdown-it核心库扩展、属性等
    */
-  markdownItConfig: (md: markdownit) => void;
+  markdownItConfig: (
+    md: markdownit,
+    options: {
+      editorId: string;
+    }
+  ) => void;
   /**
    * 挑选编辑器已预设的markdownIt的扩展
    *
@@ -575,7 +663,10 @@ export interface ConfigOption {
    * @returns plugins
    */
   markdownItPlugins: (
-    plugins: Array<MarkdownItConfigPlugin>
+    plugins: Array<MarkdownItConfigPlugin>,
+    options: {
+      editorId: string;
+    }
   ) => Array<MarkdownItConfigPlugin>;
   /**
    * 如果使用内部的图标，可以切换展示的方式
@@ -583,6 +674,13 @@ export interface ConfigOption {
    * 以规避某些问题，例如Shadow Dom对Svg use的支持问题
    */
   iconfontType: 'svg' | 'class';
+  /**
+   * mermaid配置项
+   *
+   * @param base
+   * @returns
+   */
+  mermaidConfig: (base: any) => any;
 }
 
 /**
@@ -606,6 +704,13 @@ export interface CodeCss {
   };
 }
 
+export interface CodeCssAttrs {
+  [key: string]: {
+    light: Partial<HTMLElementTagNameMap['link']>;
+    dark: Partial<HTMLElementTagNameMap['link']>;
+  };
+}
+
 export interface MdPreviewStaticProps {
   editorId: string;
   noMermaid: boolean;
@@ -623,10 +728,13 @@ export type UpdateSetting = (k: keyof SettingType, v?: boolean | undefined) => v
 
 export type ChangeEvent = (v: string) => void;
 export type SaveEvent = (v: string, h: Promise<string>) => void;
-export type UploadImgEvent = (
-  files: Array<File>,
-  callBack: (urls: string[]) => void
-) => void;
+
+export type UploadImgCallBackParam =
+  | string[]
+  | Array<{ url: string; alt: string; title: string }>;
+export type UploadImgCallBack = (urls: UploadImgCallBackParam) => void;
+export type UploadImgEvent = (files: Array<File>, callBack: UploadImgCallBack) => void;
+
 export type HtmlChangedEvent = (h: string) => void;
 export type GetCatalogEvent = (list: HeadList[]) => void;
 export type ErrorEvent = (err: InnerError) => void;
@@ -635,19 +743,27 @@ export interface ExposeEvent {
   pageFullscreen(status: boolean): void;
   fullscreen(status: boolean): void;
   preview(status: boolean): void;
+  previewOnly(status: boolean): void;
   htmlPreview(status: boolean): void;
   catalog(status: boolean): void;
 }
+
+export type DOMEventHandlers = {
+  [e in keyof HTMLElementEventMap]?: (
+    event: HTMLElementEventMap[e],
+    view: EditorView
+  ) => boolean | void;
+};
 
 export interface InsertParam {
   // 插入的内容
   targetValue: string;
   // 是否选中插入的内容
-  select: boolean;
+  select?: boolean;
   // 选中位置的开始偏移量
-  deviationStart: number;
+  deviationStart?: number;
   // 选中位置的结束偏移量
-  deviationEnd: number;
+  deviationEnd?: number;
 }
 
 /**
@@ -705,6 +821,8 @@ export interface ExposeParam {
    */
   togglePreview(status?: boolean): void;
 
+  togglePreviewOnly(status?: boolean): void;
+
   /**
    * 切换是否显示html预览
    *
@@ -746,7 +864,33 @@ export interface ExposeParam {
    * @param options 聚焦时光标的位置，不提供默认上次失焦时的位置
    */
   focus(options?: FocusOption): void;
+  /**
+   * 手动重新渲染
+   */
+  rerender(): void;
+  /**
+   * 获取当前选中的文本
+   */
+  getSelectedText(): string | undefined;
+  /**
+   * 重置已经存在的历史记录
+   */
+  resetHistory(): void;
+  /**
+   * codemirror事件
+   *
+   * @param handlers
+   */
+  domEventHandlers(handlers: DOMEventHandlers): void;
+  /**
+   * 执行内部插入命令
+   *
+   * @param direct
+   */
+  execCommand(direct: ToolDirective): void;
 }
+
+export type ExposePreviewParam = Pick<ExposeParam, 'rerender'>;
 
 /**
  * 自定义图标的数据类型

@@ -1,7 +1,7 @@
 import { useCallback, useContext, useEffect, useRef, useState } from 'react';
-import LRUCache from 'lru-cache';
-import { uuid } from '~/utils';
-import { prefix, mermaidUrl, configOption } from '~/config';
+import { LRUCache } from 'lru-cache';
+import { uuid } from '@vavt/util';
+import { prefix, configOption } from '~/config';
 import { EditorContext } from '~/Editor';
 import { appendHandler } from '~/utils/dom';
 import { ContentPreviewProps } from '../props';
@@ -12,11 +12,9 @@ import { ContentPreviewProps } from '../props';
  */
 const useMermaid = (props: ContentPreviewProps) => {
   const { theme } = useContext(EditorContext);
+  const { noMermaid, sanitizeMermaid } = props;
 
-  const { editorExtensions } = configOption;
-  const mermaidConf = editorExtensions?.mermaid;
-
-  const mermaidRef = useRef(mermaidConf?.instance);
+  const mermaidRef = useRef(configOption.editorExtensions.mermaid!.instance);
   const [reRender, setReRender] = useState(-1);
 
   const [mermaidCache] = useState(
@@ -28,62 +26,70 @@ const useMermaid = (props: ContentPreviewProps) => {
       })
   );
 
-  const setMermaidTheme = useCallback(() => {
+  const configMermaid = useCallback(() => {
     mermaidCache.clear();
     const mermaid = mermaidRef.current;
 
-    if (!props.noMermaid && mermaid) {
-      mermaid.initialize({
-        startOnLoad: false,
-        theme: theme === 'dark' ? 'dark' : 'default'
-      });
+    if (!noMermaid && mermaid) {
+      mermaid.initialize(
+        configOption.mermaidConfig({
+          startOnLoad: false,
+          theme: theme === 'dark' ? 'dark' : 'default'
+        })
+      );
 
       // 严格模式下，如果reRender是boolean型，会执行两次，这是reRender将不会effect
       setReRender((_r) => _r + 1);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [theme]);
+  }, [mermaidCache, noMermaid, theme]);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(setMermaidTheme, [setMermaidTheme]);
+  useEffect(configMermaid, [configMermaid]);
 
   useEffect(() => {
-    if (props.noMermaid) {
+    const { editorExtensions, editorExtensionsAttrs } = configOption;
+
+    if (noMermaid || mermaidRef.current) {
       return;
     }
 
     // 没有提供实例，引入mermaid
-    if (!mermaidConf?.instance) {
-      const jsSrc = mermaidConf?.js || mermaidUrl;
+    const jsSrc = editorExtensions.mermaid!.js as string;
 
-      if (/\.mjs/.test(jsSrc)) {
-        import(
-          /* @vite-ignore */
-          /* webpackIgnore: true */
-          jsSrc
-        ).then((module) => {
-          mermaidRef.current = module.default;
-          setMermaidTheme();
-        });
-      } else {
-        const mermaidScript = document.createElement('script');
-        mermaidScript.id = `${prefix}-mermaid`;
-        mermaidScript.src = jsSrc;
+    if (/\.mjs/.test(jsSrc)) {
+      appendHandler('link', {
+        ...editorExtensionsAttrs.mermaid?.js,
+        rel: 'modulepreload',
+        href: jsSrc,
+        id: `${prefix}-mermaid-m`
+      });
 
-        mermaidScript.onload = () => {
-          mermaidRef.current = window.mermaid;
-          setMermaidTheme();
-        };
-
-        appendHandler(mermaidScript, 'mermaid');
-      }
+      import(
+        /* @vite-ignore */
+        /* webpackIgnore: true */
+        jsSrc
+      ).then((module) => {
+        mermaidRef.current = module.default;
+        configMermaid();
+      });
+    } else {
+      appendHandler(
+        'script',
+        {
+          ...editorExtensionsAttrs.mermaid?.js,
+          src: jsSrc,
+          id: `${prefix}-mermaid`,
+          onload() {
+            mermaidRef.current = window.mermaid;
+            configMermaid();
+          }
+        },
+        'mermaid'
+      );
     }
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [configMermaid, noMermaid]);
 
   const replaceMermaid = useCallback(() => {
-    if (!props.noMermaid && mermaidRef.current) {
+    if (!noMermaid && mermaidRef.current) {
       const mermaidSourceEles = document.querySelectorAll<HTMLElement>(
         `div.${prefix}-mermaid`
       );
@@ -117,7 +123,8 @@ const useMermaid = (props: ContentPreviewProps) => {
           }
 
           // 9:10
-          mermaidHtml = typeof svg === 'string' ? svg : svg.svg;
+          mermaidHtml = await sanitizeMermaid(typeof svg === 'string' ? svg : svg.svg);
+
           mermaidCache.set(item.innerText, mermaidHtml);
         }
 
@@ -137,8 +144,7 @@ const useMermaid = (props: ContentPreviewProps) => {
         }
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [mermaidCache, noMermaid, sanitizeMermaid]);
 
   return { mermaidRef, reRender, replaceMermaid };
 };

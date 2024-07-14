@@ -26,7 +26,7 @@ const ClipModal = (props: ClipModalProps) => {
   const editorConext = useContext(EditorContext);
   const { editorId, usedLanguageText } = editorConext;
 
-  const Cropper = configOption.editorExtensions?.cropper?.instance;
+  const Cropper = configOption.editorExtensions.cropper!.instance;
 
   const uploadRef = useRef<HTMLInputElement>(null);
   const uploadImgRef = useRef<HTMLImageElement>(null);
@@ -74,8 +74,7 @@ const ClipModal = (props: ClipModalProps) => {
         }
       };
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [props.visible, data.cropperInited]);
+  }, [props.visible, data.cropperInited, Cropper, editorId]);
 
   useEffect(() => {
     if (data.imgSrc) {
@@ -207,7 +206,6 @@ const ClipModal = (props: ClipModalProps) => {
         />
       </Modal>
     );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     usedLanguageText.clipModalTips?.title,
     usedLanguageText.linkModalTips?.buttonOK,
@@ -218,7 +216,8 @@ const ClipModal = (props: ClipModalProps) => {
     data.imgSelected,
     data.imgSrc,
     onAdjust,
-    modalSize
+    modalSize,
+    editorId
   ]);
 };
 

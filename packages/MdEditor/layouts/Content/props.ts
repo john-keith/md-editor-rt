@@ -14,6 +14,9 @@ export interface ContentPreviewProps {
   noHighlight?: boolean;
   previewOnly?: boolean;
   noImgZoomIn?: boolean;
+  sanitizeMermaid: (html: string) => Promise<string>;
+  codeFoldable: boolean;
+  autoFoldThreshold: number;
 }
 
 export type ContentProps = Readonly<
@@ -46,5 +49,8 @@ export type ContentProps = Readonly<
      * @returns
      */
     onDrop?: (event: DragEvent) => void;
+    inputBoxWitdh: string;
+    onInputBoxWitdhChange?: (width: string) => void;
+    transformImgUrl: (text: string) => string | Promise<string>;
   } & ContentPreviewProps
 >;

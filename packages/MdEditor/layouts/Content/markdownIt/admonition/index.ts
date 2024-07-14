@@ -3,7 +3,7 @@
  *
  * 该代码只是正对md-editor-v3系列功能做了适配
  */
-import Renderer from 'markdown-it/lib/renderer';
+import markdownit, { Renderer } from 'markdown-it';
 import { prefix } from '~/config';
 
 export interface AdmonitionPluginOps {
@@ -29,7 +29,6 @@ const AdmonitionPlugin = (md: markdownit, options: AdmonitionPluginOps) => {
         'class',
         `${prefix}-admonition ${prefix}-admonition-${token.info}`
       ]);
-      tokens[idx].attrSet('data-line', String(tokens[idx].map![0]));
     } else if (token.type === 'admonition_title_open') {
       tokens[idx].attrPush(['class', `${prefix}-admonition-title`]);
     }
@@ -45,9 +44,9 @@ const AdmonitionPlugin = (md: markdownit, options: AdmonitionPluginOps) => {
       title = params.substring(type.length + 2);
     }
 
-    if (title === '' || !title) {
-      title = type;
-    }
+    // if (title === '' || !title) {
+    //   title = type;
+    // }
 
     // 取消限制
     // return types.includes(type);
@@ -169,17 +168,19 @@ const AdmonitionPlugin = (md: markdownit, options: AdmonitionPluginOps) => {
       token.map = [startLine, nextLine];
 
       // admonition title
-      token = state.push('admonition_title_open', 'p', 1);
-      token.markup = markup + ' ' + type;
-      token.map = [startLine, nextLine];
+      if (title) {
+        token = state.push('admonition_title_open', 'p', 1);
+        token.markup = markup + ' ' + type;
+        token.map = [startLine, nextLine];
 
-      token = state.push('inline', '', 0);
-      token.content = title;
-      token.map = [startLine, state.line - 1];
-      token.children = [];
+        token = state.push('inline', '', 0);
+        token.content = title;
+        token.map = [startLine, state.line - 1];
+        token.children = [];
 
-      token = state.push('admonition_title_close', 'p', -1);
-      token.markup = markup + ' ' + type;
+        token = state.push('admonition_title_close', 'p', -1);
+        token.markup = markup + ' ' + type;
+      }
 
       state.md.block.tokenize(state, startLine + 1, nextLine);
 

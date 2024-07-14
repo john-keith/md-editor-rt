@@ -1,6 +1,6 @@
 import bus from '~/utils/event-bus';
 import { configOption } from '~/config';
-import { InsertContentGenerator } from '~/type';
+import { InsertContentGenerator, UploadImgCallBackParam } from '~/type';
 import CodeMirrorUt from '~/layouts/Content/codemirror';
 import { ERROR_CATCHER } from '~/static/event-name';
 
@@ -65,7 +65,7 @@ export const directive2flag = (
 
   const selectedText = codeMirrorUt.getSelectedText();
 
-  const mermaidTemplate = configOption.editorConfig?.mermaidTemplate;
+  const mermaidTemplate = configOption.editorConfig.mermaidTemplate;
 
   if (/^h[1-6]{1}$/.test(direct)) {
     const pix = direct.replace(/^h(\d)/, (_, num) => {
@@ -76,11 +76,11 @@ export const directive2flag = (
     deviationStart = pix.length + 1;
   } else if (direct === 'prettier') {
     const prettier =
-      window.prettier || configOption.editorExtensions?.prettier?.prettierInstance;
+      window.prettier || configOption.editorExtensions.prettier!.prettierInstance;
 
     const prettierPlugins = [
       window.prettierPlugins?.markdown ||
-        configOption.editorExtensions?.prettier?.parserMarkdownInstance
+        configOption.editorExtensions.prettier!.parserMarkdownInstance
     ];
 
     if (!prettier || prettierPlugins[0] === undefined) {
@@ -213,8 +213,16 @@ export const directive2flag = (
         const { desc, url, urls } = params;
 
         if (urls instanceof Array) {
-          targetValue = urls.reduce((pVal, url) => {
-            return pVal + `![${desc}](${url})\n`;
+          targetValue = (urls as UploadImgCallBackParam).reduce<string>((pVal, _url) => {
+            const {
+              url = '',
+              alt = '',
+              title = ''
+            } = typeof _url === 'object' ? _url : { url: _url };
+
+            // ![alt](url 'title')
+            // eslint-disable-next-line quotes
+            return pVal + `![${alt}](${url}${title ? " '" + title + "'" : ''})\n`;
           }, '');
         } else {
           targetValue = `![${desc}](${url})\n`;
@@ -324,9 +332,9 @@ export const directive2flag = (
         const insertOptions = generate(selectedText);
 
         targetValue = insertOptions.targetValue;
-        select = insertOptions.select;
-        deviationStart = insertOptions.deviationStart;
-        deviationEnd = insertOptions.deviationEnd;
+        select = insertOptions.select ?? true;
+        deviationStart = insertOptions.deviationStart || 0;
+        deviationEnd = insertOptions.deviationEnd || 0;
       }
     }
   }

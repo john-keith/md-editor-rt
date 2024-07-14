@@ -15,6 +15,8 @@ export const FULL_SCREEN_CHANGED = 'fullscreenChanged';
 // 预览状态变化
 export const PREVIEW_CHANGED = 'previewChanged';
 
+export const PREVIEW_ONLY_CHANGED = 'previewOnlyChanged';
+
 // html代码变化
 export const HTML_PREVIEW_CHANGED = 'htmlPreviewChanged';
 
@@ -50,3 +52,8 @@ export const CATALOG_CHANGED = 'catalogChanged';
 
 // 主动推送目录
 export const PUSH_CATALOG = 'pushCatalog';
+
+export const RERENDER = 'rerender';
+
+// 监听dom原始事件
+export const EVENT_LISTENER = 'eventListener';

@@ -1,3 +1,4 @@
+import { deepMerge } from '@vavt/util';
 import {
   CodeCss,
   Config,
@@ -13,13 +14,13 @@ export const prefix = 'md-editor';
 export const defaultEditorId = 'md-editor-rt';
 
 // 字体链接
-export const iconfontUrl = 'https://at.alicdn.com/t/c/font_2605852_u82y61ve02.js';
-export const iconfontClassUrl = 'https://at.alicdn.com/t/c/font_2605852_qm4cjcggwma.css';
+export const iconfontSvgUrl = 'https://at.alicdn.com/t/c/font_2605852_cmafimm6hot.js';
+export const iconfontClassUrl = 'https://at.alicdn.com/t/c/font_2605852_cmafimm6hot.css';
 
 export const cdnBase = 'https://cdnjs.cloudflare.com/ajax/libs';
 
 // 代码高亮cdn链接
-export const highlightUrl = `${cdnBase}/highlight.js/11.7.0/highlight.min.js`;
+export const highlightUrl = `${cdnBase}/highlight.js/11.8.0/highlight.min.js`;
 
 // 美化代码cdn连接
 export const prettierUrl = {
@@ -65,6 +66,7 @@ export const allToolbar: Array<ToolbarNames> = [
   'pageFullscreen',
   'fullscreen',
   'preview',
+  'previewOnly',
   'htmlPreview',
   'catalog',
   'github'
@@ -100,6 +102,7 @@ export const staticTextDefault: StaticTextDefault = {
       pageFullscreen: '浏览器全屏',
       fullscreen: '屏幕全屏',
       preview: '预览',
+      previewOnly: '仅预览',
       htmlPreview: 'html代码预览',
       catalog: '目录',
       github: '源码地址'
@@ -181,6 +184,7 @@ export const staticTextDefault: StaticTextDefault = {
       pageFullscreen: 'fullscreen in page',
       fullscreen: 'fullscreen',
       preview: 'preview',
+      previewOnly: 'preview only',
       htmlPreview: 'html preview',
       catalog: 'catalog',
       github: 'source code'
@@ -231,52 +235,52 @@ export const staticTextDefault: StaticTextDefault = {
       block: 'block'
     },
     footer: {
-      markdownTotal: 'Word Count',
+      markdownTotal: 'Character Count',
       scrollAuto: 'Scroll Auto'
     }
   }
 };
 
-export const mermaidUrl = `${cdnBase}/mermaid/10.1.0/mermaid.esm.min.mjs`;
+export const mermaidUrl = `${cdnBase}/mermaid/10.6.1/mermaid.esm.min.mjs`;
 // export const mermaidUrl = `${cdnBase}/mermaid/9.4.0/mermaid.min.js`;
 
 export const katexUrl = {
-  js: `${cdnBase}/KaTeX/0.16.3/katex.min.js`,
-  css: `${cdnBase}/KaTeX/0.16.3/katex.min.css`
+  js: `${cdnBase}/KaTeX/0.16.9/katex.min.js`,
+  css: `${cdnBase}/KaTeX/0.16.9/katex.min.css`
 };
 
 export const codeCss: CodeCss = {
   a11y: {
-    light: `${cdnBase}/highlight.js/11.7.0/styles/a11y-light.min.css`,
-    dark: `${cdnBase}/highlight.js/11.7.0/styles/a11y-dark.min.css`
+    light: `${cdnBase}/highlight.js/11.8.0/styles/a11y-light.min.css`,
+    dark: `${cdnBase}/highlight.js/11.8.0/styles/a11y-dark.min.css`
   },
   atom: {
-    light: `${cdnBase}/highlight.js/11.7.0/styles/atom-one-light.min.css`,
-    dark: `${cdnBase}/highlight.js/11.7.0/styles/atom-one-dark.min.css`
+    light: `${cdnBase}/highlight.js/11.8.0/styles/atom-one-light.min.css`,
+    dark: `${cdnBase}/highlight.js/11.8.0/styles/atom-one-dark.min.css`
   },
   github: {
-    light: `${cdnBase}/highlight.js/11.7.0/styles/github.min.css`,
-    dark: `${cdnBase}/highlight.js/11.7.0/styles/github-dark.min.css`
+    light: `${cdnBase}/highlight.js/11.8.0/styles/github.min.css`,
+    dark: `${cdnBase}/highlight.js/11.8.0/styles/github-dark.min.css`
   },
   gradient: {
-    light: `${cdnBase}/highlight.js/11.7.0/styles/gradient-light.min.css`,
-    dark: `${cdnBase}/highlight.js/11.7.0/styles/gradient-dark.min.css`
+    light: `${cdnBase}/highlight.js/11.8.0/styles/gradient-light.min.css`,
+    dark: `${cdnBase}/highlight.js/11.8.0/styles/gradient-dark.min.css`
   },
   kimbie: {
-    light: `${cdnBase}/highlight.js/11.7.0/styles/kimbie-light.min.css`,
-    dark: `${cdnBase}/highlight.js/11.7.0/styles/kimbie-dark.min.css`
+    light: `${cdnBase}/highlight.js/11.8.0/styles/kimbie-light.min.css`,
+    dark: `${cdnBase}/highlight.js/11.8.0/styles/kimbie-dark.min.css`
   },
   paraiso: {
-    light: `${cdnBase}/highlight.js/11.7.0/styles/paraiso-light.min.css`,
-    dark: `${cdnBase}/highlight.js/11.7.0/styles/paraiso-dark.min.css`
+    light: `${cdnBase}/highlight.js/11.8.0/styles/paraiso-light.min.css`,
+    dark: `${cdnBase}/highlight.js/11.8.0/styles/paraiso-dark.min.css`
   },
   qtcreator: {
-    light: `${cdnBase}/highlight.js/11.7.0/styles/qtcreator-light.min.css`,
-    dark: `${cdnBase}/highlight.js/11.7.0/styles/qtcreator-dark.min.css`
+    light: `${cdnBase}/highlight.js/11.8.0/styles/qtcreator-light.min.css`,
+    dark: `${cdnBase}/highlight.js/11.8.0/styles/qtcreator-dark.min.css`
   },
   stackoverflow: {
-    light: `${cdnBase}/highlight.js/11.7.0/styles/stackoverflow-light.min.css`,
-    dark: `${cdnBase}/highlight.js/11.7.0/styles/stackoverflow-dark.min.css`
+    light: `${cdnBase}/highlight.js/11.8.0/styles/stackoverflow-light.min.css`,
+    dark: `${cdnBase}/highlight.js/11.8.0/styles/stackoverflow-dark.min.css`
   }
 };
 
@@ -295,9 +299,8 @@ export const defaultProps = {
   noPrettier: false,
   onHtmlChanged: () => {},
   onGetCatalog: () => {},
-  editorId: defaultEditorId,
   tabWidth: 2,
-  showCodeRowNumber: false,
+  showCodeRowNumber: true,
   previewTheme: 'default',
   mdHeadingId: (text: string) => text,
   style: {},
@@ -322,28 +325,225 @@ export const defaultProps = {
   readOnly: false,
   autoDetectCode: false,
   noHighlight: false,
-  noImgZoomIn: false
+  noImgZoomIn: false,
+  inputBoxWitdh: '50%',
+  sanitizeMermaid: (h: string) => Promise.resolve(h),
+  transformImgUrl: (t: string) => t,
+  codeFoldable: true,
+  autoFoldThreshold: 30
 };
 
-export const configOption: ConfigOption = {
-  editorExtensions: {},
-  editorConfig: {},
-  codeMirrorExtensions: (_theme, innerExtensions) => innerExtensions,
-  markdownItConfig: () => {},
-  markdownItPlugins: (s) => s,
-  iconfontType: 'svg'
-};
-
-export const config: Config = (option) => {
-  type OptionKey = keyof typeof option;
-
-  if (option) {
-    for (const key in option) {
-      const optionItem = option[key as OptionKey] as any;
-
-      if (optionItem) {
-        configOption[key as OptionKey] = optionItem;
+// 当前版本的值
+export const editorExtensionsAttrs: ConfigOption['editorExtensionsAttrs'] = {
+  highlight: {
+    js: {
+      integrity:
+        'sha384-g4mRvs7AO0/Ol5LxcGyz4Doe21pVhGNnC3EQw5shw+z+aXDN86HqUdwXWO+Gz2zI',
+      crossOrigin: 'anonymous'
+    },
+    css: {
+      a11y: {
+        light: {
+          integrity:
+            'sha384-qdZDAN3jffvh670RHw1wxLekabidEFaNRninYgIzBvMbL6WlHdXeHS/Bt+vx33lN',
+          crossOrigin: 'anonymous'
+        },
+        dark: {
+          integrity:
+            'sha384-2QAAjX8pqaM5azX68KWI2wExF6Q13kY4kEiQFY4b/1zPe6rpgmTByNpDEllH3sb+',
+          crossOrigin: 'anonymous'
+        }
+      },
+      atom: {
+        light: {
+          integrity:
+            'sha384-w6Ujm1VWa9HYFqGc89oAPn/DWDi2gUamjNrq9DRvEYm2X3ClItg9Y9xs1ViVo5b5',
+          crossOrigin: 'anonymous'
+        },
+        dark: {
+          integrity:
+            'sha384-oaMLBGEzBOJx3UHwac0cVndtX5fxGQIfnAeFZ35RTgqPcYlbprH9o9PUV/F8Le07',
+          crossOrigin: 'anonymous'
+        }
+      },
+      github: {
+        light: {
+          integrity:
+            'sha384-eFTL69TLRZTkNfYZOLM+G04821K1qZao/4QLJbet1pP4tcF+fdXq/9CdqAbWRl/L',
+          crossOrigin: 'anonymous'
+        },
+        dark: {
+          integrity:
+            'sha384-wH75j6z1lH97ZOpMOInqhgKzFkAInZPPSPlZpYKYTOqsaizPvhQZmAtLcPKXpLyH',
+          crossOrigin: 'anonymous'
+        }
+      },
+      gradient: {
+        light: {
+          integrity:
+            'sha384-yErHBR8aEZPxRl3XmR8dGSRAclMlnSRRw8sXQLcmPWzWUvb56BzQmBw3EWHl7QGI',
+          crossOrigin: 'anonymous'
+        },
+        dark: {
+          integrity:
+            'sha384-lUCvtSOdvDbp5hLWKgwz/taFu1HxlpqES2OVP5UG2JMTfnU481gXcBhGF9lAGoSr',
+          crossOrigin: 'anonymous'
+        }
+      },
+      kimbie: {
+        light: {
+          integrity:
+            'sha384-tloeSLUPczAvoZ48TUz+OxRie0oYLCRwlkadUXovGzzJEIbNQB2TkfUuvJ6SW5Mi',
+          crossOrigin: 'anonymous'
+        },
+        dark: {
+          integrity:
+            'sha384-o5F1vUaMNOmou1sQrsWiFo4/QUGSV0svqNZW+EesmKxWC8MpFJcveBhAyfvTHbGb',
+          crossOrigin: 'anonymous'
+        }
+      },
+      paraiso: {
+        light: {
+          integrity:
+            'sha384-5j6QHU2Hwg1ehtlIQNDebhETDB8bga3/88hzBFsMRaGmgQHCftqIN7GZNDNw0vTL',
+          crossOrigin: 'anonymous'
+        },
+        dark: {
+          integrity:
+            'sha384-I5vnnMQu0LWDQnHpT61xyoMwKarAB8jpZkB2ioFOlmzUFnIFaV4QbUwlBBOMKhTH',
+          crossOrigin: 'anonymous'
+        }
+      },
+      qtcreator: {
+        light: {
+          integrity:
+            'sha384-iEBgHrwi8Hv4dSZBz+MOGvS05rF7I7fGKM2fASQyE9jn2Istg9Qd5dSoK18WyRTB',
+          crossOrigin: 'anonymous'
+        },
+        dark: {
+          integrity:
+            'sha384-D6LXJGWNR4QV7gnpuP3ccbvOYoR02td3cU0y7lESABPg/tzCSC4m+y+M2TtrmpHc',
+          crossOrigin: 'anonymous'
+        }
+      },
+      stackoverflow: {
+        light: {
+          integrity:
+            'sha384-FMwt7cTGo4aLxZnno5k0xTj0W4gmi48Kwept+y/oQmE6cFk36Kr+QJZOKNOQwORe',
+          crossOrigin: 'anonymous'
+        },
+        dark: {
+          integrity:
+            'sha384-iL+x+BroCyHm/p2c6sMA9umXhdCWp2cKe4QUjPeMzHgwXAk+ZxHyIGP3NZTZensU',
+          crossOrigin: 'anonymous'
+        }
       }
+    }
+  },
+  prettier: {
+    standaloneJs: {
+      integrity:
+        'sha384-cBKW1A8TbwohtSsrm+VWpXevI1PWdPmUrozwqTw7aS51JIhz9IvgHHa/bV6icWeL',
+      crossOrigin: 'anonymous'
+    },
+    parserMarkdownJs: {
+      integrity:
+        'sha384-kXeeC2HiA6n3rpvz0MOjB7yZo9QjvYNAMihonwR5fdTOFs/rm/Bm3Xg8cOSE4900',
+      crossOrigin: 'anonymous'
+    }
+  },
+  cropper: {
+    js: {
+      integrity:
+        'sha384-r+ljwOAhwY4/kdyzMnuBg7MEVoWpTMp5EYUDntB/E9qzNwL9dAEcNrb2XaV+mJc2',
+      crossOrigin: 'anonymous'
+    },
+    css: {
+      integrity:
+        'sha384-oMy41mb/qJnpJlpXOF57hSu2KGi47l/UV9+tPNrBOs7/ap5Vubj/3phrCtjutHMQ',
+      crossOrigin: 'anonymous'
+    }
+  },
+  iconfont: {
+    integrity: 'sha384-HRrf1e8/EiqrIZQftejl7pMTeuLeYczOz7rolAGxgw86N7UjiXkex67Uf2XTZz5z',
+    crossOrigin: 'anonymous'
+  },
+  iconfontClass: {
+    integrity: 'sha384-81pjilF/gLoQvAfd8madmeylVdv8IagPQaq1C/OZbysLav7k9g+Ir3XD5qK00Q5r',
+    crossOrigin: 'anonymous'
+  },
+  screenfull: {
+    js: {
+      integrity:
+        'sha384-ELVAm9p9T4LGCG4lz8hbYalUYAppIpI1zV8IXYDCBUJFiVnV+EeG8vGSYQi+Wi4S',
+      crossOrigin: 'anonymous'
+    }
+  },
+  mermaid: {
+    js: {
+      integrity:
+        'sha384-zmipzuFBFDAekHS2uY4mN5cvpcSvgUi3aMjMJ2xnVRsU2kDHBtqLOJRnianHJeP1',
+      crossOrigin: 'anonymous'
+    }
+  },
+  katex: {
+    js: {
+      integrity:
+        'sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8',
+      crossOrigin: 'anonymous'
+    },
+    css: {
+      integrity:
+        'sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV',
+      crossOrigin: 'anonymous'
     }
   }
 };
+
+export const configOption: ConfigOption = {
+  editorExtensions: {
+    highlight: {
+      js: highlightUrl,
+      css: codeCss
+    },
+    prettier: {
+      standaloneJs: prettierUrl.main,
+      parserMarkdownJs: prettierUrl.markdown
+    },
+    cropper: {
+      ...cropperUrl
+    },
+    iconfont: iconfontSvgUrl,
+    iconfontClass: iconfontClassUrl,
+    screenfull: {
+      js: screenfullUrl
+    },
+    mermaid: {
+      js: mermaidUrl
+    },
+    katex: {
+      ...katexUrl
+    }
+  },
+  editorExtensionsAttrs: {},
+  editorConfig: {
+    languageUserDefined: {},
+    mermaidTemplate: {},
+    renderDelay: 500,
+    zIndex: 20000
+  },
+  codeMirrorExtensions: (_theme, innerExtensions) => innerExtensions,
+  markdownItConfig: () => {},
+  markdownItPlugins: (s) => s,
+  iconfontType: 'svg',
+  mermaidConfig: (c) => c
+};
+
+export const config: Config = (option) => {
+  return deepMerge(configOption, option);
+};
+
+/**
+ * 拖拽时最小的宽度
+ */
+export const MinInputBoxWidth = 170;

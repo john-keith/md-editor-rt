@@ -1,6 +1,6 @@
 # 🎄 md-editor-rt
 
-![](https://img.shields.io/github/package-json/v/imzbf/md-editor-rt) ![](https://img.shields.io/npm/dm/md-editor-rt) ![](https://img.shields.io/bundlephobia/min/md-editor-rt) ![](https://img.shields.io/github/license/imzbf/md-editor-rt) ![](https://img.shields.io/badge/ssr-%3E1.0.0-brightgreen)
+![](https://img.shields.io/github/package-json/v/imzbf/md-editor-rt) ![](https://img.shields.io/npm/dm/md-editor-rt) ![](https://img.shields.io/github/license/imzbf/md-editor-rt) ![](https://img.shields.io/badge/ssr-%3E1.0.0-brightgreen)
 
 [English](https://github.com/imzbf/md-editor-rt) \| 中文
 
@@ -29,15 +29,25 @@ react 版本的 Markdown 编辑器，[md-editor-v3](https://imzbf.github.io/md-e
 yarn add md-editor-rt
 ```
 
-使用语言、预览主题扩展库：
+使用已存在的语言、主题扩展，例如：日语
 
 ```shell
-yarn add @vavt/md-editor-extension
+yarn add @vavt/cm-extension
+```
+
+使用更多的扩展工具栏组件，例如：导出内容为 PDF
+
+```shell
+yarn add @vavt/rt-extension
 ```
 
 更多使用及贡献方式参考：[md-editor-extension](https://github.com/imzbf/md-editor-extension)
 
 ## 💡 用法
+
+当使用服务端渲染时，请务必设置`editorId`为固定值。
+
+从`v4.0.0`开始，内部组件支持按需引用。
 
 ### ✍🏻 编辑器模式
 
@@ -51,10 +61,6 @@ export default () => {
   return <MdEditor modelValue={text} onChange={setText} />;
 };
 ```
-
-> 从`v4.0.0`开始，内部组件支持按需引用。
-
-> 如果页面存在多个编辑器，请给组件设置不相同的`editorId`。
 
 ### 📖 仅预览模式
 
@@ -78,6 +84,8 @@ export default () => {
 };
 ```
 
+当使用服务端渲染时，`scrollElement`应该是字符类型，例：`body`、`#id`、`.class`。
+
 ## 🗺 预览图
 
 | 默认模式 | 暗黑模式 | 仅预览 |
@@ -97,23 +105,26 @@ export default () => {
 | modelValue | `string` | '' | md 编辑内容 |
 | theme | `light \| dark` | 'light' | 主题切换 |
 | className | `string` | '' | 编辑器类名 |
+| style | `CSSProperties` | {} | 编辑器内联样式 |
 | language | `string` | 'zh-CN' | 内置中英文('zh-CN','en-US')，可自行扩展其他语言，同时可覆盖内置的中英文 |
-| editorId | `string` | 'md-editor-rt' | 编辑器唯一标识，非必须项，当相同页面存在两个编辑器时，请务必区别该属性 |
-| showCodeRowNumber | `boolean` | false | 代码块是否显示行号 |
+| editorId | `string` | 'md-editor-rt\_[\d]' | 编辑器唯一标识，默认数字累加，当使用服务端渲染时，请务必设置该属性为固定值 |
+| showCodeRowNumber | `boolean` | true | 代码块是否显示行号 |
 | previewTheme | `'default' \| 'github' \| 'vuepress' \| 'mk-cute' \| 'smart-blue' \| 'cyanosis'` | 'default' | 预览内容主题，自定义主题规则见下方 |
-| style | `string \| CSSProperties` | {} | 编辑器内联样式 |
 | noMermaid | `boolean` | false | 如果你不希望使用图表展示内容，可以设置关闭 |
 | noKatex | `boolean` | false | 不使用 katex 展示数学公式 |
 | codeTheme | `'atom' \| 'a11y' \| 'github' \| 'gradient' \| 'kimbie' \| 'paraiso' \| 'qtcreator' \| 'stackoverflow'` | 'atom' | 代码块 highlight 样式名称，扩展更多见下方 |
 | mdHeadingId | `(text: string, level: number, index: number) => string` | (text) => text | 标题`ID`计算方式 |
-| sanitize | `(html: string) => string` | (html) => html | 在每次生成 html 后，通过该方法移除危险内容，比如 xss 相关。 |
-| noIconfont | `boolean` | false | 不插入 iconfont 链接，你可以[下载](https://at.alicdn.com/t/c/font_2605852_u82y61ve02.js)到本地自行引入 |
+| sanitize | `(html: string) => string` | (html) => html | 通过该属性修改编译后的html内容 |
+| noIconfont | `boolean` | false | 不插入 iconfont 链接，你可以在[这里](https://imzbf.github.io/md-editor-rt/zh-CN/docs#%F0%9F%A4%9E%F0%9F%8F%BC%20noIconfont)获取最新链接 |
 | formatCopiedText | `(text: string) => string` | (text: string) => text | 格式化复制代码 |
 | codeStyleReverse | `boolean` | true | 代码块为暗色背景的预览主题，将代码风格设置为暗色风格 |
 | codeStyleReverseList | `Array<string>` | ['default', 'mk-cute'] | 代码块为暗色背景的预览主题 |
 | noHighlight | `boolean` | false | 是否不高亮代码 |
 | noImgZoomIn | `boolean` | false | 是否关闭编辑器默认的放大功能 |
 | customIcon | `CustomIcon` | {} | 自定义的图标 |
+| sanitizeMermaid | `(h: string) => Promise<string>` | (h: string) => Promise.resolve(h) | 转换生成的 mermaid 代码 |
+| codeFoldable | `boolean` | true | 是否开启折叠代码功能 |
+| autoFoldThreshold | `number` | 30 | 触发自动折叠代码的行数阈值 |
 
 ### 🔩 MdEditor Props
 
@@ -128,7 +139,7 @@ export default () => {
 | toolbarsExclude | `Array<ToolbarNames \| number>` | [] | 选择性不展示工具栏，内容同`toolbars` |
 | noPrettier | `boolean` | false | 是否启用 prettier 优化 md 内容 |
 | tabWidth | `number` | 2 | 编辑器 TAB 键位等于空格数 |
-| tableShape | `[number, number]` | [6, 4] | 标题栏添加表格时，预设待选表格大小，第一个代表最大列数，第二个代表最大行数 |
+| tableShape | `[number, number] \| [number, number, number, number]` | [6, 4] | 标题栏添加表格时，预设待选表格大小，[列数，行数，扩展最大列数，扩展最大行数] |
 | placeholder | `string` | '' |  |
 | defToolbars | `Array<DropdownToolbar \| NormalToolbar \| ModalToolbar>` | [] | 使用内置的组件自定义扩展工具栏 |
 | footers | `Array<'markdownTotal' \| '=' \| 'scrollSwitch' \| number>` | ['markdownTotal', '=', 'scrollSwitch'] | 页脚显示内容，`=`左右分割，设置为`[]`不显示页脚 |
@@ -142,6 +153,8 @@ export default () => {
 | autoDetectCode | `boolean` | false | 是否启用自动识别粘贴代码类别，目前仅支持从`vscode`复制的内容 |
 | completions | `Array<CompletionSource>` | [] | `@codemirror/autocomplete`匹配关键词的方法列表 |
 | showToolbarName | `boolean` | false | 是否在工具栏下面显示对应的文字名称 |
+| inputBoxWitdh | `string` | '50%' | 输入框默认的宽度 |
+| transformImgUrl | `(imgUrl: string) => string \| Promise<string>` | t => t | 转换图片链接 |
 
 > 如果你重新定义了标题，请务必通过`mdHeadingId`告诉编辑器你生成标题 ID 的算法。以便生成的内部目录能够正确导航。
 
@@ -178,6 +191,7 @@ export default () => {
   'pageFullscreen',
   'fullscreen',
   'preview',
+  'previewOnly',
   'htmlPreview',
   'catalog',
   'github'
@@ -221,6 +235,7 @@ export interface ToolbarTips {
   fullscreen?: string;
   catalog?: string;
   preview?: string;
+  previewOnly?: string;
   htmlPreview?: string;
   github?: string;
   '-'?: string;
@@ -302,7 +317,7 @@ export interface StaticTextDefaultValue {
 
 ### 🧵 MdPreview 绑定事件
 
-| 名称          | 入参                    | 说明                                      |
+| 名称          | 类型                    | 说明                                      |
 | ------------- | ----------------------- | ----------------------------------------- |
 | onHtmlChanged | `html: string`          | html 变化回调事件，用于获取预览 html 代码 |
 | onGetCatalog  | `list: Array<HeadList>` | 动态获取`markdown`目录                    |
@@ -311,16 +326,17 @@ export interface StaticTextDefaultValue {
 
 除去和`MdPreivew`相同的以外：
 
-| 名称 | 入参 | 说明 |
+| 名称 | 类型 | 说明 |
 | --- | --- | --- |
 | onChange | `value: string` | 内容变化事件（当前与`textare`的`oninput`事件绑定，每输入一个单字即会触发） |
 | onSave | `value: string, html: Promise<string>` | 保存事件，快捷键与保存按钮均会触发 |
-| onUploadImg | `files: Array<File>, callback: (urls: Array<string>) => void` | 上传图片事件，弹窗会等待上传结果，务必将上传后的 urls 作为 callback 入参回传 |
+| onUploadImg | `files: Array<File>, callback: (urls: string[] \| { url: string; alt: string; title: string }[]) => void` | 上传图片事件，弹窗会等待上传结果，务必将上传后的 urls 作为 callback 入参回传 |
 | onError | `err: { name: 'Cropper' \| 'fullscreen' \| 'prettier' \| 'overlength'; message: string }` | 运行错误反馈事件，目前包括`Cropper`、`fullscreen`、`prettier`实例未加载完成操作错误，以及输入内容超出限制长度错误 |
 | onBlur | `event: FocusEvent` | 输入框失去焦点时触发事件 |
 | onFocus | `event: FocusEvent` | 输入框获得焦点时触发事件 |
 | onInput | `event: Event` | 输入框键入内容事件 |
 | onDrop | `event: DragEvent` | 拖放所选内容触发事件 |
+| onInputBoxWitdhChange | `(width: string) => void` | 调整输入框宽度事件 |
 
 ## 🤱🏼 实例暴露
 
@@ -368,6 +384,12 @@ export default () => {
   editorRef.current?.on('preview', (status) => console.log(status));
   ```
 
+- previewOnly
+
+  ```js
+  editorRef.current?.on('previewOnly', (status) => console.log(status));
+  ```
+
 - htmlPreview
 
   ```js
@@ -402,6 +424,14 @@ editorRef.current?.toggleFullscreen(true);
 
 ```js
 editorRef.current?.togglePreview(true);
+```
+
+### 📖 togglePreviewOnly
+
+切换仅预览状态。
+
+```js
+editorRef.current?.togglePreviewOnly(true);
 ```
 
 ### 📼 toggleHtmlPreview
@@ -439,9 +469,9 @@ editorRef.current?.triggerSave();
 editorRef.current?.insert((selectedText) => {
   /**
    * @return targetValue    待插入内容
-   * @return select         插入后是否自动选中内容
-   * @return deviationStart 插入后选中内容鼠标开始位置
-   * @return deviationEnd   插入后选中内容鼠标结束位置
+   * @return select         插入后是否自动选中内容，默认：true
+   * @return deviationStart 插入后选中内容鼠标开始位置，默认：0
+   * @return deviationEnd   插入后选中内容鼠标结束位置，默认：0
    */
   return {
     targetValue: `${selectedText}`,
@@ -467,9 +497,53 @@ const option: FocusOption | undefined = 'start';
 editorRef.current?.focus(option);
 ```
 
+### ✒️ rerender
+
+手动重新渲染内容。
+
+```js
+editorRef.current?.rerender();
+```
+
+### 🔍 getSelectedText
+
+获取当前选中的文字。
+
+```js
+console.log(editorRef.current?.getSelectedText());
+```
+
+### 🗑 resetHistory
+
+清除当前的历史记录。
+
+### 🎛 domEventHandlers
+
+支持监听全部的dom事件。
+
+```js
+editorRef.current?.domEventHandlers({
+  compositionstart: () => {
+    console.log('compositionstart');
+  }
+});
+```
+
+### 🎛 execCommand
+
+通过触发器向编辑器插入内容。
+
+```js
+editorRef.current?.execCommand('bold');
+```
+
 ## 💴 编辑器配置
 
 使用`config(option: ConfigOption)`方法，可以对构建实例进行定制。
+
+> [!WARNING]
+>
+> 我们建议你在项目入口配置，例如 vite 创建的项目中的 main.js。不要在组件中去调用 `config` ！
 
 ### codeMirrorExtensions
 
@@ -492,6 +566,15 @@ config({
 
 自定义 markdown-it 核心库扩展、属性等。
 
+```ts
+type MarkdownItConfig = (
+  md: markdownit,
+  options: {
+    editorId: string;
+  }
+) => void;
+```
+
 使用示例：配置使用`markdown-it-anchor`并在标题右侧显示一个超链接符号
 
 ```js
@@ -510,6 +593,15 @@ config({
 ### markdownItPlugins
 
 挑选、新增 markdown-it 核心库已预设的扩展。
+
+```ts
+type MarkdownItPlugins = (
+  plugins: Array<MarkdownItConfigPlugin>,
+  options: {
+    editorId: string;
+  }
+) => Array<MarkdownItConfigPlugin>;
+```
 
 使用示例：修改图片的类名
 
@@ -552,7 +644,9 @@ config({
       ...more
     },
     // 输入渲染延迟，默认500ms。当仅预览模式时，未设置此项默认0ms
-    renderDelay: 500
+    renderDelay: 500,
+    // 内部弹窗的zIndex
+    zIndex: 2000
   }
 });
 ```
@@ -612,6 +706,22 @@ export interface EditorExtensions {
 
 </details>
 
+### editorExtensionsAttrs
+
+同步添加CDN链接标签的上属性，类型与`editorExtensions`一直，值类型是`HTMLElementTagNameMap<script|link>`
+
+内部提供所有链接的`integrity`值，使用方式如下：
+
+```js
+import { config, editorExtensionsAttrs } from 'md-editor-rt';
+
+config({
+  editorExtensionsAttrs
+});
+```
+
+不要尝试在editorExtensionsAttrs定义script的src\onload\id，link的rel\href\id它们会被默认值覆盖
+
 ### 🫨 iconfontType
 
 固定使用那种方式展示图标，可以切换展示的方式
@@ -620,6 +730,23 @@ export interface EditorExtensions {
 - `class`: font-class 方式
 
 如果通过属性`customIcon`自定义了图标，会优先使用自定义的。
+
+### 🎨 mermaidConfig
+
+mermaid 配置项，[配置详情](https://mermaid.js.org/config/schema-docs/config.html)
+
+```js
+import { config } from 'md-editor-rt';
+
+config({
+  mermaidConfig(base: any) {
+    return {
+      ...base,
+      logLevel: 'error'
+    };
+  }
+});
+```
 
 ### 🪡 快捷键
 
@@ -706,6 +833,9 @@ import { NormalToolbar } from 'md-editor-rt';
   - `isFullscreen`: `boolean`，显示全屏按钮时必须，弹窗全屏状态。
   - `trigger`: `ReactNode`，必须，通常是个图标，用来展示在工具栏上。
   - `children`: `ReactNode`，必须，弹窗中的内容。
+  - `className`: `string`，非必须，类名。
+  - `style`: `CSSProperties`，非必须，样式。
+  - `showMask`: `boolean`， 非必须，是否展示遮罩层，默认true。
 
 - **events**
 
@@ -720,7 +850,7 @@ import { NormalToolbar } from 'md-editor-rt';
 - **props**
 
   - `editorId`: `string`，必须，对应编辑器的`editorId`，在内部注册目录变化监听事件。
-  - `class`: `string`，非必须，目录组件最外层类名。
+  - `className`: `string`，非必须，目录组件最外层类名。
   - `mdHeadingId`: `MdHeadingId`，非必须，特殊化编辑器标题的算法，与编辑器相同。
   - `scrollElement`: `string | HTMLElement`，非必须，为字符时应是一个元素选择器。仅预览模式中，整页滚动时，设置为`document.documentElement`。
   - `theme`: `'light' | 'dark'`，非必须，当需要切换主题时提供，同编辑器的`theme`。
@@ -730,6 +860,7 @@ import { NormalToolbar } from 'md-editor-rt';
 - **events**
 
   - `onClick`: `(e: MouseEvent, t: TocItem) => void`，非必须，导航点击事件。
+  - `onActive`: `(heading: HeadList | undefined) => void`，非必须，高亮的标题变化事件。
 
 ### 🛸 弹窗组件
 
@@ -746,11 +877,27 @@ import { NormalToolbar } from 'md-editor-rt';
   - `children`: `ReactNode`，非必须，弹窗显示的内容。
   - `className`: `string`，非必须，类名。
   - `style`: `CSSProperties`，非必须，样式。
+  - `showMask`: `boolean`，非必须，是否展示遮罩层，默认true。
 
 - **events**
 
   - `onClose`: `() => void`，必须，弹窗点击关闭事件。
   - `onAdjust`: `(val: boolean) => void`，弹窗全屏按钮点击事件。
+
+## 🪤 内部配置
+
+```js
+import {
+  iconfontClassUrl,
+  iconfontSvgUrl,
+  allToolbar,
+  allFooter,
+  zh_CN,
+  en_US
+} from 'md-editor-rt';
+
+console.log(iconfontClassUrl, iconfontSvgUrl, allToolbar, allFooter, zh_CN, en_US);
+```
 
 ## 🗂 部分示例
 
@@ -787,7 +934,16 @@ export default () => {
       })
     );
 
+    // 方式一
     callback(res.map((item) => item.data.url));
+    // 方式二
+    // callback(
+    //   res.map((item: any) => ({
+    //     url: item.data.url,
+    //     alt: 'alt',
+    //     title: 'title'
+    //   }))
+    // );
   };
 
   return <MdEditor modelValue={text} onChange={setText} onUploadImg={onUploadImg} />;
@@ -809,6 +965,7 @@ export default () => {
   --md-border-hover-color: if(@isDark, #636262, #b9b9b9);
   --md-border-active-color: if(@isDark, #777, #999);
   --md-modal-mask: #00000073;
+  --md-modal-shadow: if(@isDark, 0px 6px 24px 2px #00000066, 0px 6px 24px 2px #0000000a);
   --md-scrollbar-bg-color: if(@isDark, #0f0f0f, #e2e2e2);
   --md-scrollbar-thumb-color: if(@isDark, #2d2d2d, #0000004d);
   --md-scrollbar-thumb-hover-color: if(@isDark, #3a3a3a, #00000059);

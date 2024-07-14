@@ -9,7 +9,13 @@ import React, {
   useEffect
 } from 'react';
 import { linkTo, draggingScroll } from '@vavt/util';
-import { ToolbarNames, SettingType, UpdateSetting, InsertContentGenerator } from '~/type';
+import {
+  ToolbarNames,
+  SettingType,
+  UpdateSetting,
+  InsertContentGenerator,
+  TableShapeType
+} from '~/type';
 import { EditorContext } from '~/Editor';
 import { ToolDirective } from '~/utils/content-help';
 import { allToolbar, prefix } from '~/config';
@@ -37,7 +43,7 @@ export interface ToolbarProps {
   toolbarsExclude: Array<ToolbarNames>;
   setting: SettingType;
   updateSetting: UpdateSetting; // (k: keyof SettingType, shouldScreenFull?: boolean) => void;
-  tableShape: [number, number];
+  tableShape: TableShapeType;
   defToolbars?: Array<ReactElement>;
   noUploadImg: boolean;
   showToolbarName?: boolean;
@@ -48,7 +54,8 @@ let splitNum = 0;
 const Toolbar = (props: ToolbarProps) => {
   const { toolbars, toolbarsExclude, updateSetting } = props;
   // 获取ID，语言设置
-  const { editorId, usedLanguageText } = useContext(EditorContext);
+  const { editorId, usedLanguageText, theme, previewTheme, language } =
+    useContext(EditorContext);
   const ult = usedLanguageText;
 
   const [wrapperId] = useState(() => `${editorId}-toolbar-wrapper`);
@@ -57,10 +64,12 @@ const Toolbar = (props: ToolbarProps) => {
   const uploadRef = useRef<HTMLInputElement>(null);
 
   // bar触发事件
-  const emitHandler = useCallback((direct: ToolDirective, params?: any) => {
-    bus.emit(editorId, REPLACE, direct, params);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const emitHandler = useCallback(
+    (direct: ToolDirective, params?: any) => {
+      bus.emit(editorId, REPLACE, direct, params);
+    },
+    [editorId]
+  );
 
   // 全屏功能
   const { fullscreenHandler } = useSreenfull(props);
@@ -88,9 +97,9 @@ const Toolbar = (props: ToolbarProps) => {
         visible={visible.title}
         onChange={onTitleChange}
         overlay={
-          <ul className={`${prefix}-menu`} onClick={onTitleClose}>
+          <ul key="bar-title-overlay" className={`${prefix}-menu`} onClick={onTitleClose}>
             <li
-              className={`${prefix}-menu-item`}
+              className={`${prefix}-menu-item ${prefix}-menu-item-title`}
               onClick={() => {
                 emitHandler('h1');
               }}
@@ -98,7 +107,7 @@ const Toolbar = (props: ToolbarProps) => {
               {ult.titleItem?.h1}
             </li>
             <li
-              className={`${prefix}-menu-item`}
+              className={`${prefix}-menu-item ${prefix}-menu-item-title`}
               onClick={() => {
                 emitHandler('h2');
               }}
@@ -106,7 +115,7 @@ const Toolbar = (props: ToolbarProps) => {
               {ult.titleItem?.h2}
             </li>
             <li
-              className={`${prefix}-menu-item`}
+              className={`${prefix}-menu-item ${prefix}-menu-item-title`}
               onClick={() => {
                 emitHandler('h3');
               }}
@@ -114,7 +123,7 @@ const Toolbar = (props: ToolbarProps) => {
               {ult.titleItem?.h3}
             </li>
             <li
-              className={`${prefix}-menu-item`}
+              className={`${prefix}-menu-item ${prefix}-menu-item-title`}
               onClick={() => {
                 emitHandler('h4');
               }}
@@ -122,7 +131,7 @@ const Toolbar = (props: ToolbarProps) => {
               {ult.titleItem?.h4}
             </li>
             <li
-              className={`${prefix}-menu-item`}
+              className={`${prefix}-menu-item ${prefix}-menu-item-title`}
               onClick={() => {
                 emitHandler('h5');
               }}
@@ -130,7 +139,7 @@ const Toolbar = (props: ToolbarProps) => {
               {ult.titleItem?.h5}
             </li>
             <li
-              className={`${prefix}-menu-item`}
+              className={`${prefix}-menu-item ${prefix}-menu-item-title`}
               onClick={() => {
                 emitHandler('h6');
               }}
@@ -141,7 +150,11 @@ const Toolbar = (props: ToolbarProps) => {
         }
         key="bar-title"
       >
-        <div className={`${prefix}-toolbar-item`} title={ult.toolbarTips?.title}>
+        <div
+          key="bar-title-trigger"
+          className={`${prefix}-toolbar-item`}
+          title={ult.toolbarTips?.title}
+        >
           <Icon name="title" />
 
           {props.showToolbarName && (
@@ -168,9 +181,9 @@ const Toolbar = (props: ToolbarProps) => {
         visible={visible.image}
         onChange={onImageChange}
         overlay={
-          <ul className={`${prefix}-menu`} onClick={onImageClose}>
+          <ul key="bar-image-overlay" className={`${prefix}-menu`} onClick={onImageClose}>
             <li
-              className={`${prefix}-menu-item`}
+              className={`${prefix}-menu-item ${prefix}-menu-item-image`}
               onClick={() => {
                 setModalData((_modalData) => {
                   return {
@@ -184,7 +197,7 @@ const Toolbar = (props: ToolbarProps) => {
               {ult.imgTitleItem?.link}
             </li>
             <li
-              className={`${prefix}-menu-item`}
+              className={`${prefix}-menu-item ${prefix}-menu-item-image`}
               onClick={() => {
                 (uploadRef.current as HTMLInputElement).click();
               }}
@@ -192,7 +205,7 @@ const Toolbar = (props: ToolbarProps) => {
               {ult.imgTitleItem?.upload}
             </li>
             <li
-              className={`${prefix}-menu-item`}
+              className={`${prefix}-menu-item ${prefix}-menu-item-image`}
               onClick={() => {
                 setModalData((_modalData) => {
                   return {
@@ -209,7 +222,11 @@ const Toolbar = (props: ToolbarProps) => {
         }
         key="bar-image"
       >
-        <div className={`${prefix}-toolbar-item`} title={ult.toolbarTips?.image}>
+        <div
+          key="bar-image-trigger"
+          className={`${prefix}-toolbar-item`}
+          title={ult.toolbarTips?.image}
+        >
           <Icon name="image" />
 
           {props.showToolbarName && (
@@ -237,10 +254,18 @@ const Toolbar = (props: ToolbarProps) => {
         onChange={onTableChange}
         key="bar-table"
         overlay={
-          <TableShape tableShape={props.tableShape} onSelected={onTableSelected} />
+          <TableShape
+            key="bar-table-overlay"
+            tableShape={props.tableShape}
+            onSelected={onTableSelected}
+          />
         }
       >
-        <div className={`${prefix}-toolbar-item`} title={ult.toolbarTips?.table}>
+        <div
+          key="bar-table-trigger"
+          className={`${prefix}-toolbar-item`}
+          title={ult.toolbarTips?.table}
+        >
           <Icon name="table" />
 
           {props.showToolbarName && (
@@ -266,9 +291,13 @@ const Toolbar = (props: ToolbarProps) => {
         visible={visible.mermaid}
         onChange={onMermaidChange}
         overlay={
-          <ul className={`${prefix}-menu`} onClick={onMermaidClose}>
+          <ul
+            key="bar-mermaid-overlay"
+            className={`${prefix}-menu`}
+            onClick={onMermaidClose}
+          >
             <li
-              className={`${prefix}-menu-item`}
+              className={`${prefix}-menu-item ${prefix}-menu-item-mermaid`}
               onClick={() => {
                 emitHandler('flow');
               }}
@@ -276,7 +305,7 @@ const Toolbar = (props: ToolbarProps) => {
               {ult.mermaid?.flow}
             </li>
             <li
-              className={`${prefix}-menu-item`}
+              className={`${prefix}-menu-item ${prefix}-menu-item-mermaid`}
               onClick={() => {
                 emitHandler('sequence');
               }}
@@ -284,7 +313,7 @@ const Toolbar = (props: ToolbarProps) => {
               {ult.mermaid?.sequence}
             </li>
             <li
-              className={`${prefix}-menu-item`}
+              className={`${prefix}-menu-item ${prefix}-menu-item-mermaid`}
               onClick={() => {
                 emitHandler('gantt');
               }}
@@ -292,7 +321,7 @@ const Toolbar = (props: ToolbarProps) => {
               {ult.mermaid?.gantt}
             </li>
             <li
-              className={`${prefix}-menu-item`}
+              className={`${prefix}-menu-item ${prefix}-menu-item-mermaid`}
               onClick={() => {
                 emitHandler('class');
               }}
@@ -300,7 +329,7 @@ const Toolbar = (props: ToolbarProps) => {
               {ult.mermaid?.class}
             </li>
             <li
-              className={`${prefix}-menu-item`}
+              className={`${prefix}-menu-item ${prefix}-menu-item-mermaid`}
               onClick={() => {
                 emitHandler('state');
               }}
@@ -308,7 +337,7 @@ const Toolbar = (props: ToolbarProps) => {
               {ult.mermaid?.state}
             </li>
             <li
-              className={`${prefix}-menu-item`}
+              className={`${prefix}-menu-item ${prefix}-menu-item-mermaid`}
               onClick={() => {
                 emitHandler('pie');
               }}
@@ -316,7 +345,7 @@ const Toolbar = (props: ToolbarProps) => {
               {ult.mermaid?.pie}
             </li>
             <li
-              className={`${prefix}-menu-item`}
+              className={`${prefix}-menu-item ${prefix}-menu-item-mermaid`}
               onClick={() => {
                 emitHandler('relationship');
               }}
@@ -324,7 +353,7 @@ const Toolbar = (props: ToolbarProps) => {
               {ult.mermaid?.relationship}
             </li>
             <li
-              className={`${prefix}-menu-item`}
+              className={`${prefix}-menu-item ${prefix}-menu-item-mermaid`}
               onClick={() => {
                 emitHandler('journey');
               }}
@@ -335,7 +364,11 @@ const Toolbar = (props: ToolbarProps) => {
         }
         key="bar-mermaid"
       >
-        <div className={`${prefix}-toolbar-item`} title={ult.toolbarTips?.mermaid}>
+        <div
+          key="bar-mermaid-trigger"
+          className={`${prefix}-toolbar-item`}
+          title={ult.toolbarTips?.mermaid}
+        >
           <Icon name="mermaid" />
 
           {props.showToolbarName && (
@@ -364,9 +397,9 @@ const Toolbar = (props: ToolbarProps) => {
         visible={visible.katex}
         onChange={onKatexChange}
         overlay={
-          <ul className={`${prefix}-menu`} onClick={onKatexClose}>
+          <ul key="bar-katex-overlay" className={`${prefix}-menu`} onClick={onKatexClose}>
             <li
-              className={`${prefix}-menu-item`}
+              className={`${prefix}-menu-item ${prefix}-menu-item-katex`}
               onClick={() => {
                 emitHandler('katexInline');
               }}
@@ -374,7 +407,7 @@ const Toolbar = (props: ToolbarProps) => {
               {ult.katex?.inline}
             </li>
             <li
-              className={`${prefix}-menu-item`}
+              className={`${prefix}-menu-item ${prefix}-menu-item-katex`}
               onClick={() => {
                 emitHandler('katexBlock');
               }}
@@ -385,7 +418,11 @@ const Toolbar = (props: ToolbarProps) => {
         }
         key="bar-katex"
       >
-        <div className={`${prefix}-toolbar-item`} title={ult.toolbarTips?.katex}>
+        <div
+          key="bar-katex-trigger"
+          className={`${prefix}-toolbar-item`}
+          title={ult.toolbarTips?.katex}
+        >
           <Icon name="formula" />
 
           {props.showToolbarName && (
@@ -878,6 +915,26 @@ const Toolbar = (props: ToolbarProps) => {
               </div>
             );
           }
+          case 'previewOnly': {
+            return (
+              <div
+                className={`${prefix}-toolbar-item`}
+                title={ult.toolbarTips?.previewOnly}
+                onClick={() => {
+                  props.updateSetting('previewOnly');
+                }}
+                key="bar-preview-only"
+              >
+                <Icon name="preview-only" />
+
+                {props.showToolbarName && (
+                  <div className={`${prefix}-toolbar-item-name`}>
+                    {ult.toolbarTips?.previewOnly}
+                  </div>
+                )}
+              </div>
+            );
+          }
           case 'htmlPreview': {
             return (
               <div
@@ -928,6 +985,9 @@ const Toolbar = (props: ToolbarProps) => {
 
         if (defItem) {
           const defItemCloned = cloneElement(defItem, {
+            theme,
+            previewTheme,
+            language,
             insert(generate: InsertContentGenerator) {
               bus.emit(editorId, REPLACE, 'universal', { generate });
             }
@@ -942,24 +1002,22 @@ const Toolbar = (props: ToolbarProps) => {
       }
     },
     [
-      ImageDropdown,
-      KatexDropdown,
-      MermaidDropdown,
-      TableDropdown,
-      TitleDropdown,
-      editorId,
-      emitHandler,
-      fullscreenHandler,
-      modalData,
-      props.defToolbars,
-      props.noPrettier,
-      props.noUploadImg,
-      props.setting.fullscreen,
-      props.setting.pageFullscreen,
-      props.showToolbarName,
-      setModalData,
+      props,
       ult.toolbarTips,
-      updateSetting
+      emitHandler,
+      TitleDropdown,
+      setModalData,
+      modalData,
+      ImageDropdown,
+      TableDropdown,
+      editorId,
+      updateSetting,
+      fullscreenHandler,
+      MermaidDropdown,
+      KatexDropdown,
+      theme,
+      language,
+      previewTheme
     ]
   );
 

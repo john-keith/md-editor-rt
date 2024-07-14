@@ -1,6 +1,6 @@
 # 🎄 md-editor-rt
 
-![](https://img.shields.io/github/package-json/v/imzbf/md-editor-rt) ![](https://img.shields.io/npm/dm/md-editor-rt) ![](https://img.shields.io/bundlephobia/min/md-editor-rt) ![](https://img.shields.io/github/license/imzbf/md-editor-rt) ![](https://img.shields.io/badge/ssr-%3E1.0.0-brightgreen)
+![](https://img.shields.io/github/package-json/v/imzbf/md-editor-rt) ![](https://img.shields.io/npm/dm/md-editor-rt) ![](https://img.shields.io/github/license/imzbf/md-editor-rt) ![](https://img.shields.io/badge/ssr-%3E1.0.0-brightgreen)
 
 English \| [中文](https://github.com/imzbf/md-editor-rt/blob/develop/README-CN.md)
 
@@ -32,15 +32,25 @@ Markdown editor for `react`, developed in `jsx` and `typescript`.
 yarn add md-editor-rt
 ```
 
-Install existing extension of language and theme of preview:
+Use existing extension of language and theme, such as Japanese
 
 ```shell
-yarn add @vavt/md-editor-extension
+yarn add @vavt/cm-extension
+```
+
+Use existing components of toolbar, such as exporting content as PDF
+
+```shell
+yarn add @vavt/v3-extension
 ```
 
 For more ways to use or contribute, please refer to: [md-editor-extension](https://github.com/imzbf/md-editor-extension)
 
 ## 💡 Usage
+
+When using server-side rendering, make sure to set `editorId` to a constant value.
+
+Starting from `4.0.0`, internal components can be imported on-demand.
 
 ### ✍🏻 Display Editor
 
@@ -54,10 +64,6 @@ export default () => {
   return <MdEditor modelValue={text} onChange={setText} />;
 };
 ```
-
-> `^4.0.0`, internal components can be imported on-demand.
-
-> If there are multiple editors on the page, please set different `editorId` for each editor!
 
 ### 📖 Preview Only
 
@@ -81,6 +87,8 @@ export default () => {
 };
 ```
 
+When using server-side rendering, `scrollElement` should be of string type, eg: `body`, `#id`, `.class`.
+
 ## 🗺 Preview
 
 | Default theme | Dark theme | Preview only |
@@ -100,23 +108,26 @@ Inputing prompt and mark, emoji extensions
 | modelValue | `string` | '' | Markdown content |
 | theme | `'light' \| 'dark'` | 'light' | Editor theme |
 | className | `string` | '' |  |
-| language | `string` | 'zh-CN' | Build-in language('zh-CN','en-US') |
-| editorId | `string` | 'md-editor-rt' | Editor id, it is used when there are more than two editors in the same page |
-| showCodeRowNumber | `boolean` | false | Show row number for code block or not |
-| previewTheme | `'default' \| 'github' \| 'vuepress' \| 'mk-cute' \| 'smart-blue' \| 'cyanosis'` | 'default' | Preview theme, can be customized |
 | style | `CSSProperties` | {} | Editor inline style |
+| language | `string` | 'zh-CN' | Build-in language('zh-CN','en-US') |
+| editorId | `string` | 'md-editor-rt\_[\d]' | Editor's id, default incrementing by number. When using server-side rendering, make sure to set this attribute to a constant value |
+| showCodeRowNumber | `boolean` | true | Show row number for code block or not |
+| previewTheme | `'default' \| 'github' \| 'vuepress' \| 'mk-cute' \| 'smart-blue' \| 'cyanosis'` | 'default' | Preview theme, can be customized |
 | noMermaid | `boolean` | false | Use mermaid or not |
 | noKatex | `boolean` | false | Use katex or not |
 | codeTheme | `'atom' \| 'a11y' \| 'github' \| 'gradient' \| 'kimbie' \| 'paraiso' \| 'qtcreator' \| 'stackoverflow'` | 'atom' | Highlight code style, can be customized also |
 | mdHeadingId | `(text: string, level: number, index: number) => string` | (text) => text | H1-H6 `ID` generator |
-| sanitize | `(html: string) => string` | (html) => html | Sanitize the html, prevent XSS |
-| noIconfont | `boolean` | false | Not append iconfont script, [download](https://at.alicdn.com/t/c/font_2605852_u82y61ve02.js) and import it by yourself |
+| sanitize | `(html: string) => string` | (html) => html | This attribute is used to alter the compiled HTML content |
+| noIconfont | `boolean` | false | Not append iconfont script, you can get the latest link [here](https://imzbf.github.io/md-editor-rt/en-US/docs#%F0%9F%A4%9E%F0%9F%8F%BC%20noIconfont) |
 | formatCopiedText | `(text: string) => string` | (text: string) => text | Format copied code |
 | codeStyleReverse | `boolean` | true | Code style will be reversed to dark while code block of the theme has a dark background |
 | codeStyleReverseList | `Array<string>` | ['default', 'mk-cute'] | Themes to be reversed |
 | noHighlight | `boolean` | false | Highlight code or not |
 | noImgZoomIn | `boolean` | false | Enable the function of enlarging images |
 | customIcon | `CustomIcon` | {} | Customized icons |
+| sanitizeMermaid | `(h: string) => Promise<string>` | (h: string) => Promise.resolve(h) | Convert the generated mermaid code |
+| codeFoldable | `boolean` | true | Whether to enable code folding feature |
+| autoFoldThreshold | `number` | 30 | Threshold for triggering automatic code folding by line count |
 
 ### 🔩 MdEditor Props
 
@@ -131,7 +142,7 @@ Except for the same as `MdPreview`:
 | toolbarsExclude | `Array<ToolbarNames \| number>` | [] | Don't show contents of toolbar, all keys`toolbars` |
 | noPrettier | `boolean` | false | Use prettier to beautify content or not |
 | tabWidth | `number` | 2 | One tab eq some spaces |
-| tableShape | `[number, number]` | [6, 4] | Preset the size of the table, [columns, rows] |
+| tableShape | `[number, number] \| [number, number, number, number]` | [6, 4] | Preset the size of the table, [columns, rows, Maximum number of columns, Maximum number of rows] |
 | placeholder | `string` | '' |  |
 | defToolbars | `Array<DropdownToolbar \| NormalToolbar \| ModalToolbar>` | [] | Custom toolbar in `DropdownToolbar`, `NormalToolbar` or `ModalToolbar` |
 | footers | `Array<'markdownTotal' \| '=' \| 'scrollSwitch' \| number>` | ['markdownTotal', '=', 'scrollSwitch'] | Show contents of footer, they are divided by `'='`. Set it to `[]` to hidden footer |
@@ -145,6 +156,8 @@ Except for the same as `MdPreview`:
 | autoDetectCode | `boolean` | false | auto detect the type of pasted code, only support that copied from `vscode` |
 | completions | `Array<CompletionSource>` | [] | `@codemirror/autocomplete` List of function to match keywords |
 | showToolbarName | `boolean` | false | Show toolbar name or not |
+| inputBoxWitdh | `string` | '50%' | Default width of input box |
+| transformImgUrl | `(imgUrl: string) => string \| Promise<string>` | t => t | Transform image links |
 
 <details>
  <summary>『toolbars』</summary>
@@ -179,6 +192,7 @@ Except for the same as `MdPreview`:
   'pageFullscreen',
   'fullscreen',
   'preview',
+  'previewOnly',
   'htmlPreview',
   'catalog',
   'github'
@@ -222,6 +236,7 @@ export interface ToolbarTips {
   fullscreen?: string;
   catalog?: string;
   preview?: string;
+  previewOnly?: string;
   htmlPreview?: string;
   github?: string;
   '-'?: string;
@@ -296,7 +311,7 @@ export interface StaticTextDefaultValue {
 
 ### 🧵 MdPreview Events
 
-| name | parameter | description |
+| name | type | description |
 | --- | --- | --- |
 | onHtmlChanged | `html: string` | Compile markdown successful event, you can use it to get the html code |
 | onGetCatalog | `list: Array<HeadList>` | Get catalog of article |
@@ -305,16 +320,17 @@ export interface StaticTextDefaultValue {
 
 Except for the same as `MdPreview`:
 
-| name | parameter | description |
+| name | type | description |
 | --- | --- | --- |
-| onChange | `value: string` | Content changed event(bind to `oninput` of `textarea`) |
-| onSave | `value: string, html: Promise<string>` | Saving content event, `ctrl+s` and clicking button will trigger it |
-| onUploadImg | `files: Array<File>, callback: (urls: Array<string>) => void` | Uploading picture event, when picture is uploading the modal will not close, please provide right urls to the callback function |
+| onChange | `value: string` | Content changed(bind to `oninput` of `textarea`) |
+| onSave | `value: string, html: Promise<string>` | Saving content, `ctrl+s` and clicking button will trigger it |
+| onUploadImg | `files: Array<File>, callback: (urls: string[] \| { url: string; alt: string; title: string }[]) => void` | Uploading picture, when picture is uploading the modal will not close, please provide right urls to the callback function |
 | onError | `err: { name: 'Cropper' \| 'fullscreen' \| 'prettier' \| 'overlength'; message: string }` | Catch run-time error, `Cropper`, `fullscreen` and `prettier` are used when they are not loaded. And content exceeds the length limit error |
 | onBlur | `event: FocusEvent<HTMLTextAreaElement, Element>` | Textarea has lost focus |
 | onFocus | `event: FocusEvent<HTMLTextAreaElement, Element>` | Textarea has received focus |
 | onInput | `event: Event` | Element gets input |
-| onDrop | `event: DragEvent` | The event occurs when a selection is being dragged |
+| onDrop | `event: DragEvent` | Selection is being dragged |
+| onInputBoxWitdhChange | `(width: string) => void` | Width of input box has been changed |
 
 ## 🤱🏼 Expose
 
@@ -362,6 +378,12 @@ Get the internal state of the editor, including pageFullscreen, fullscreen, prev
   editorRef.current?.on('preview', (status) => console.log(status));
   ```
 
+- previewOnly
+
+  ```js
+  editorRef.current?.on('previewOnly', (status) => console.log(status));
+  ```
+
 - htmlPreview
 
   ```js
@@ -398,6 +420,14 @@ Toggle status of preview.
 editorRef.current?.togglePreview(true);
 ```
 
+### 📖 togglePreviewOnly
+
+Toggle into Preview Only Mode
+
+```js
+editorRef.current?.togglePreviewOnly(true);
+```
+
 ### 📼 toggleHtmlPreview
 
 Toggle status of htmlPreview.
@@ -431,9 +461,9 @@ Manually insert content into textarea.
 editorRef.current?.insert((selectedText) => {
   /**
    * @return targetValue    Content to be inserted
-   * @return select         Automatically select content
-   * @return deviationStart Start position of the selected content
-   * @return deviationEnd   End position of the selected content
+   * @return select         Automatically select content, default: true
+   * @return deviationStart Start position of the selected content, default: 0
+   * @return deviationEnd   End position of the selected content, default: 0
    */
   return {
     targetValue: `${selectedText}`,
@@ -459,9 +489,53 @@ const option: FocusOption | undefined = 'start';
 editorRef.current?.focus(option);
 ```
 
+### ✒️ rerender
+
+Re render the content.
+
+```js
+editorRef.current?.rerender();
+```
+
+### 🔍 getSelectedText
+
+Get the currently selected text.
+
+```js
+console.log(editorRef.current?.getSelectedText());
+```
+
+### 🗑 resetHistory
+
+Clear current history.
+
+### 🎛 domEventHandlers
+
+Supports listening to all DOM events.
+
+```js
+editorRef.current?.domEventHandlers({
+  compositionstart: () => {
+    console.log('compositionstart');
+  }
+});
+```
+
+### 🎛 execCommand
+
+Insert content into the editor via trigger.
+
+```js
+editorRef.current?.execCommand('bold');
+```
+
 ## 💴 Config Editor
 
 Use `config(option: ConfigOption)` to reconfigure `markdown-it` and so on.
+
+> [!WARNING]
+>
+> We recommend configuring it at the project entry point, such as in `main.js` for projects created with Vite. Avoid calling `config` within components!
 
 ### codeMirrorExtensions
 
@@ -484,6 +558,15 @@ config({
 
 Customize extensions, attributes of `markdown-it`, etc.
 
+```ts
+type MarkdownItConfig = (
+  md: markdownit,
+  options: {
+    editorId: string;
+  }
+) => void;
+```
+
 Example: Use `markdown-it-anchor` to render a hyperlink symbol to the right of the title
 
 ```js
@@ -502,6 +585,15 @@ config({
 ### markdownItPlugins
 
 Select and add built-in plugins to `markdown-it`.
+
+```ts
+type MarkdownItPlugins = (
+  plugins: Array<MarkdownItConfigPlugin>,
+  options: {
+    editorId: string;
+  }
+) => Array<MarkdownItConfigPlugin>;
+```
 
 Example: Modify the class name of the image.
 
@@ -542,7 +634,9 @@ config({
       ...more
     },
     // Default 500ms. It is set to 0ms when preview only and not set.
-    renderDelay: 500
+    renderDelay: 500,
+    // for modal component
+    zIndex: 2000
   }
 });
 ```
@@ -602,6 +696,20 @@ export interface EditorExtensions {
 
 </details>
 
+### editorExtensionsAttrs
+
+Synchronously add attributes to the CDN link tags, consistent with the type of `editorExtensions`, with a value type of `HTMLElementTagNameMap['tagName']`.
+
+```js
+import { config, editorExtensionsAttrs } from 'md-editor-rt';
+
+config({
+  editorExtensionsAttrs
+});
+```
+
+Do not attempt to define the src \ onload \ id of the script and rel \ href \ id of the link in editorExtensionsAttrs, as they will be overwritten by default values
+
 ### 🫨 iconfontType
 
 Set the way to display icons:
@@ -610,6 +718,23 @@ Set the way to display icons:
 - `class`: with font-class
 
 If the icon is customized through the attribute `customIcon`, the customized icon will be used first.
+
+### 🎨 mermaidConfig
+
+Configure `mermaid`, [Details](https://mermaid.js.org/config/schema-docs/config.html)
+
+```js
+import { config } from 'md-editor-rt';
+
+config({
+  mermaidConfig(base: any) {
+    return {
+      ...base,
+      logLevel: 'error'
+    };
+  }
+});
+```
 
 ### 🪡 Shortcut Key
 
@@ -692,12 +817,15 @@ For more examples, refer to [document](https://imzbf.github.io/md-editor-rt).
   - `isFullscreen`: `boolean`, necessary when `showAdjust = true`, status of fullscreen.
   - `trigger`: `ReactNode`, necessary, it is usually an icon, which is displayed on the toolbar.
   - `children`: `ReactNode`, necessary, content of Modal.
+  - `className`: `string`, not necessary.
+  - `style`: `CSSProperties`, not necessary.
+  - `showMask`: `boolean`, not necessary, whether to display the mask layer, default `true`.
 
 - **events**
 
   - `onClick`: `() => void`, necessary.
-  - `onClose`: `() => void`, necessary, close event.
-  - `onAdjust`: `(val: boolean) => void`, fullscreen button click event.
+  - `onClose`: `() => void`, necessary, closed event.
+  - `onAdjust`: `(val: boolean) => void`, fullscreen button was clicked.
 
 ### 🐻 MdCatalog
 
@@ -706,7 +834,7 @@ For more examples, refer to [document](https://imzbf.github.io/md-editor-rt).
 - **props**
 
   - `editorId`: `string`, necessary, same as editor's `editorId`, used to register listening events.
-  - `class`: `string`, not necessary.
+  - `className`: `string`, not necessary.
   - `mdHeadingId`: `MdHeadingId`, not necessary, same as editor.
   - `scrollElement`: `string | HTMLElement`, not necessary, it is an element selector when its type is string. When `previewOnly` eq `true`, it is usually set to `document.documentElement`.
   - `theme`: `'light' | 'dark'`, not necessary, provide it when you want to change theme online, it is the same as Editor `theme`.
@@ -715,7 +843,8 @@ For more examples, refer to [document](https://imzbf.github.io/md-editor-rt).
 
 - **events**
 
-  - `onClick`: `(e: MouseEvent, t: TocItem) => void`, not necessary.
+  - `onClick`: `(e: MouseEvent, t: TocItem) => void`, not necessary, heading was clicked.
+  - `onActive`: `(heading: HeadList | undefined) => void`, not necessary, heading was highlighted.
 
 ### 🛸 MdModal
 
@@ -732,11 +861,27 @@ For more examples, refer to [document](https://imzbf.github.io/md-editor-rt).
   - `children`: `ReactNode`, necessary, content of Modal.
   - `className`: `string`, not necessary.
   - `style`: `CSSProperties`, not necessary.
+  - `showMask`: `boolean`, not necessary, whether to display the mask layer, default `true`.
 
 - **events**
 
-  - `onClose`: `() => void`, necessary, close event.
-  - `onAdjust`: `(val: boolean) => void`, fullscreen button click event.
+  - `onClose`: `() => void`, necessary, closed event.
+  - `onAdjust`: `(val: boolean) => void`, fullscreen button was clicked.
+
+## 🪤 Internal Configuration
+
+```js
+import {
+  iconfontClassUrl,
+  iconfontSvgUrl,
+  allToolbar,
+  allFooter,
+  zh_CN,
+  en_US
+} from 'md-editor-rt';
+
+console.log(iconfontClassUrl, iconfontSvgUrl, allToolbar, allFooter, zh_CN, en_US);
+```
 
 ## 🗂 Examples
 
@@ -771,7 +916,16 @@ export default () => {
       })
     );
 
+    // Approach 1
     callback(res.map((item) => item.data.url));
+    // Approach 2
+    // callback(
+    //   res.map((item: any) => ({
+    //     url: item.data.url,
+    //     alt: 'alt',
+    //     title: 'title'
+    //   }))
+    // );
   };
 
   return <MdEditor modelValue={text} onChange={setText} onUploadImg={onUploadImg} />;
@@ -791,6 +945,7 @@ export default () => {
   --md-border-hover-color: if(@isDark, #636262, #b9b9b9);
   --md-border-active-color: if(@isDark, #777, #999);
   --md-modal-mask: #00000073;
+  --md-modal-shadow: if(@isDark, 0px 6px 24px 2px #00000066, 0px 6px 24px 2px #00000019);
   --md-scrollbar-bg-color: if(@isDark, #0f0f0f, #e2e2e2);
   --md-scrollbar-thumb-color: if(@isDark, #2d2d2d, #0000004d);
   --md-scrollbar-thumb-hover-color: if(@isDark, #3a3a3a, #00000059);

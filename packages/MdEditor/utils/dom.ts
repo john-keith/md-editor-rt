@@ -1,5 +1,3 @@
-import { debounce } from '@vavt/util';
-
 /**
  * 设置页面元素可移动
  *
@@ -16,8 +14,7 @@ export const keyMove = (
     const width = parent.offsetWidth;
     const height = parent.offsetHeight;
     // 当前页长宽
-    const clientWidth = document.documentElement.clientWidth;
-    const clientHeight = document.documentElement.clientHeight;
+    const { clientWidth, clientHeight } = document.documentElement;
 
     const x = mdown.offsetX;
     const y = mdown.offsetY;
@@ -59,31 +56,26 @@ export const keyMove = (
  * @param ele
  * @param checkKey 全局名称
  */
-export const appendHandler = (ele: HTMLElement, checkKey = '') => {
-  const insertedEle = document.getElementById(ele.id);
-
-  // 备份
-  const onload_ = ele.onload;
-  // 清空
-  ele.onload = null;
-
-  const onload = function (this: GlobalEventHandlers, e: Event) {
-    if (typeof onload_ === 'function') {
-      onload_.bind(this)(e);
-    }
-
-    ele.removeEventListener('load', onload);
-  };
+export const appendHandler = <K extends keyof HTMLElementTagNameMap>(
+  tagName: K,
+  attributes: Partial<HTMLElementTagNameMap[K]>,
+  checkKey = ''
+) => {
+  const insertedEle = document.getElementById(attributes.id!);
 
   if (!insertedEle) {
-    ele.addEventListener('load', onload);
+    // 浅拷贝
+    const attrsCopy = { ...attributes };
+    attrsCopy.onload = null;
+    const ele = createHTMLElement(tagName, attrsCopy);
+    attributes.onload && ele.addEventListener('load', attributes.onload);
     document.head.appendChild(ele);
   } else if (checkKey !== '') {
-    insertedEle.addEventListener('load', onload);
-
     if (Reflect.get(window, checkKey)) {
       // 实例已存在，直接触发load事件
-      insertedEle.dispatchEvent(new Event('load'));
+      attributes.onload?.call(insertedEle, new Event('load'));
+    } else {
+      attributes.onload && insertedEle.addEventListener('load', attributes.onload);
     }
   }
 };
@@ -95,10 +87,35 @@ export const appendHandler = (ele: HTMLElement, checkKey = '') => {
  * @param attr 属性名
  * @param value 属性值
  */
-export const updateHandler = debounce((id: string, attr: string, value: string) => {
-  const ele = document.getElementById(id);
+export const updateHandler = <K extends keyof HTMLElementTagNameMap>(
+  tagName: K,
+  attributes: Partial<HTMLElementTagNameMap[K]>
+) => {
+  const insertedEle = document.getElementById(attributes.id!);
+  insertedEle?.remove();
 
-  if (ele) {
-    ele.setAttribute(attr, value);
-  }
-}, 10);
+  appendHandler(tagName, attributes);
+};
+
+/**
+ * 创建带属性的原始标签
+ *
+ * @param tagName
+ * @param attributes
+ * @returns
+ */
+export const createHTMLElement = <K extends keyof HTMLElementTagNameMap>(
+  tagName: K,
+  attributes: Partial<HTMLElementTagNameMap[K]>
+): HTMLElementTagNameMap[K] => {
+  const element = document.createElement(tagName);
+
+  // 设置提供的属性到标签上
+  Object.keys(attributes).forEach((key) => {
+    if (attributes[key as keyof HTMLElementTagNameMap[K]] !== undefined) {
+      (element as any)[key] = attributes[key as keyof HTMLElementTagNameMap[K]];
+    }
+  });
+
+  return element;
+};

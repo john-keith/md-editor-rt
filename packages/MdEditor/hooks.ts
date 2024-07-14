@@ -1,9 +1,11 @@
 import {
   ForwardedRef,
+  MutableRefObject,
   useCallback,
   useEffect,
   useImperativeHandle,
   useMemo,
+  useRef,
   useState
 } from 'react';
 import bus from './utils/event-bus';
@@ -17,20 +19,16 @@ import {
   UpdateSetting,
   ExposeEvent,
   MdPreviewStaticProps,
-  FocusOption
+  FocusOption,
+  UploadImgCallBack
 } from './type';
 import {
   prefix,
-  iconfontUrl,
-  prettierUrl,
-  cropperUrl,
   allToolbar,
   codeCss,
-  highlightUrl,
   staticTextDefault,
   configOption,
-  defaultProps,
-  iconfontClassUrl
+  defaultProps
 } from './config';
 import { appendHandler } from './utils/dom';
 import {
@@ -42,12 +40,15 @@ import {
   PREVIEW_CHANGED,
   HTML_PREVIEW_CHANGED,
   CATALOG_VISIBLE_CHANGED,
-  TEXTAREA_FOCUS,
   BUILD_FINISHED,
   ERROR_CATCHER,
   REPLACE,
-  UPLOAD_IMAGE
+  UPLOAD_IMAGE,
+  RERENDER,
+  EVENT_LISTENER,
+  PREVIEW_ONLY_CHANGED
 } from './static/event-name';
+import { ContentExposeParam } from './layouts/Content/type';
 
 /**
  * 键盘监听
@@ -56,7 +57,7 @@ import {
  * @param staticProps
  */
 export const useOnSave = (props: EditorProps, staticProps: StaticProps) => {
-  const { modelValue } = props;
+  const { modelValue, onSave } = props;
   const { editorId } = staticProps;
 
   const [state, setState] = useState({
@@ -85,12 +86,11 @@ export const useOnSave = (props: EditorProps, staticProps: StaticProps) => {
     return () => {
       bus.remove(editorId, BUILD_FINISHED, buildFinishedCb);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [editorId]);
 
   useEffect(() => {
     const callback = () => {
-      if (props.onSave) {
+      if (onSave) {
         const htmlPromise = new Promise<string>((rev) => {
           if (state.buildFinished) {
             rev(state.html);
@@ -109,7 +109,7 @@ export const useOnSave = (props: EditorProps, staticProps: StaticProps) => {
           }
         });
 
-        props.onSave(props.modelValue, htmlPromise);
+        onSave(modelValue, htmlPromise);
       }
     };
 
@@ -122,8 +122,7 @@ export const useOnSave = (props: EditorProps, staticProps: StaticProps) => {
     return () => {
       bus.remove(editorId, ON_SAVE, callback);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [modelValue, props, state.buildFinished, state.html]);
+  }, [editorId, modelValue, onSave, state.buildFinished, state.html]);
 
   useEffect(() => {
     // 编辑后添加未编译完成标识
@@ -144,83 +143,84 @@ export const useOnSave = (props: EditorProps, staticProps: StaticProps) => {
 export const useExpansion = (staticProps: StaticProps) => {
   const { noPrettier, noUploadImg } = staticProps;
 
-  const { editorExtensions } = configOption;
-
-  // 判断是否需要插入prettier标签
-  const noPrettierScript =
-    noPrettier || !!configOption.editorExtensions?.prettier?.prettierInstance;
-
-  // 判断是否需要插入prettier markdown扩展标签
-  const noParserMarkdownScript =
-    noPrettier || !!configOption.editorExtensions?.prettier?.parserMarkdownInstance;
-
-  // 判断是否需要插入裁剪图片标签
-  const noCropperScript =
-    noUploadImg || !!configOption.editorExtensions?.cropper?.instance;
-
   useEffect(() => {
-    // prettier
-    const prettierScript = document.createElement('script');
-    const prettierMDScript = document.createElement('script');
+    const { editorExtensions, editorExtensionsAttrs } = configOption;
 
-    prettierScript.src = editorExtensions?.prettier?.standaloneJs || prettierUrl.main;
-    prettierScript.id = `${prefix}-prettier`;
+    // 判断是否需要插入prettier标签
+    const noPrettierScript = noPrettier || !!editorExtensions.prettier!.prettierInstance;
 
-    prettierMDScript.src =
-      editorExtensions?.prettier?.parserMarkdownJs || prettierUrl.markdown;
-    prettierMDScript.id = `${prefix}-prettierMD`;
+    // 判断是否需要插入prettier markdown扩展标签
+    const noParserMarkdownScript =
+      noPrettier || !!editorExtensions.prettier!.parserMarkdownInstance;
 
-    // 裁剪图片
-    const cropperLink = document.createElement('link');
-    cropperLink.rel = 'stylesheet';
-    cropperLink.href = editorExtensions?.cropper?.css || cropperUrl.css;
-    cropperLink.id = `${prefix}-cropperCss`;
+    // 判断是否需要插入裁剪图片标签
+    const noCropperScript = noUploadImg || !!editorExtensions.cropper!.instance;
 
-    const cropperScript = document.createElement('script');
-    cropperScript.src = editorExtensions?.cropper?.js || cropperUrl.js;
-    cropperScript.id = `${prefix}-cropper`;
-
-    // 非仅预览模式才添加扩展
     if (!noCropperScript) {
-      appendHandler(cropperLink);
-      appendHandler(cropperScript);
+      // 裁剪图片
+      const { js = {}, css = {} } = editorExtensionsAttrs.cropper || {};
+
+      appendHandler('link', {
+        ...css,
+        rel: 'stylesheet',
+        href: editorExtensions.cropper!.css,
+        id: `${prefix}-cropperCss`
+      });
+      appendHandler('script', {
+        ...js,
+        src: editorExtensions.cropper!.js,
+        id: `${prefix}-cropper`
+      });
     }
 
+    // prettier
     if (!noPrettierScript) {
-      appendHandler(prettierScript);
+      const { standaloneJs = {} } = editorExtensionsAttrs.prettier || {};
+
+      appendHandler('script', {
+        ...standaloneJs,
+        src: editorExtensions.prettier!.standaloneJs,
+        id: `${prefix}-prettier`
+      });
     }
 
     if (!noParserMarkdownScript) {
-      appendHandler(prettierMDScript);
+      const { parserMarkdownJs = {} } = editorExtensionsAttrs.prettier || {};
+
+      appendHandler('script', {
+        ...parserMarkdownJs,
+        src: editorExtensions.prettier!.parserMarkdownJs,
+        id: `${prefix}-prettierMD`
+      });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [noPrettier, noUploadImg]);
 
   useExpansionPreview(staticProps);
 };
 
 export const useExpansionPreview = ({ noIconfont }: MdPreviewStaticProps) => {
   useEffect(() => {
-    if (!noIconfont) {
-      if (configOption.iconfontType === 'svg') {
-        // 图标
-        const iconfontScript = document.createElement('script');
-        iconfontScript.src = configOption.editorExtensions?.iconfont || iconfontUrl;
-        iconfontScript.id = `${prefix}-icon`;
-        appendHandler(iconfontScript);
-      } else {
-        const iconfontLink = document.createElement('link');
-        iconfontLink.rel = 'stylesheet';
-        iconfontLink.href =
-          configOption.editorExtensions?.iconfontClass || iconfontClassUrl;
-        iconfontLink.id = `${prefix}-icon-class`;
-
-        appendHandler(iconfontLink);
-      }
+    const { editorExtensions, editorExtensionsAttrs, iconfontType } = configOption;
+    if (noIconfont) {
+      return;
     }
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (iconfontType === 'svg') {
+      // 图标
+      appendHandler('script', {
+        ...editorExtensionsAttrs.iconfont,
+        src: editorExtensions.iconfont,
+        id: `${prefix}-icon`
+      });
+    } else {
+      appendHandler('link', {
+        ...editorExtensionsAttrs.iconfontClass,
+        rel: 'stylesheet',
+        href: editorExtensions.iconfontClass,
+        id: `${prefix}-icon-class`
+      });
+    }
+  }, [noIconfont]);
 };
 
 /**
@@ -239,8 +239,7 @@ export const useErrorCatcher = (editorId: string, onError: (err: InnerError) => 
     return () => {
       bus.remove(editorId, ERROR_CATCHER, onError);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onError]);
+  }, [editorId, onError]);
 };
 
 /**
@@ -250,10 +249,11 @@ export const useErrorCatcher = (editorId: string, onError: (err: InnerError) => 
  */
 export const useUploadImg = (props: EditorProps, staticProps: StaticProps) => {
   const { editorId } = staticProps;
+  const { onUploadImg } = props;
 
   useEffect(() => {
     const uploadImageCallBack = (files: Array<File>, cb: () => void) => {
-      const insertHanlder = (urls: Array<string>) => {
+      const insertHanlder: UploadImgCallBack = (urls) => {
         bus.emit(editorId, REPLACE, 'image', {
           desc: '',
           urls
@@ -262,9 +262,7 @@ export const useUploadImg = (props: EditorProps, staticProps: StaticProps) => {
         cb && cb();
       };
 
-      if (props.onUploadImg) {
-        props.onUploadImg(files, insertHanlder);
-      }
+      onUploadImg?.(files, insertHanlder);
     };
 
     // 监听上传图片
@@ -276,8 +274,7 @@ export const useUploadImg = (props: EditorProps, staticProps: StaticProps) => {
     return () => {
       bus.remove(editorId, UPLOAD_IMAGE, uploadImageCallBack);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [props.onUploadImg]);
+  }, [editorId, onUploadImg]);
 };
 
 /**
@@ -294,18 +291,22 @@ export const useCatalog = (props: EditorProps, staticProps: StaticProps) => {
   const [catalogShow, setCatalogShow] = useState(false);
 
   useEffect(() => {
+    const callback = (v: boolean | undefined) => {
+      if (v === undefined) {
+        setCatalogShow((_catalogShow) => !_catalogShow);
+      } else {
+        setCatalogShow(v);
+      }
+    };
     bus.on(editorId, {
       name: CHANGE_CATALOG_VISIBLE,
-      callback: (v: boolean | undefined) => {
-        if (v === undefined) {
-          setCatalogShow((_catalogShow) => !_catalogShow);
-        } else {
-          setCatalogShow(v);
-        }
-      }
+      callback
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+
+    return () => {
+      bus.remove(editorId, CHANGE_CATALOG_VISIBLE, callback);
+    };
+  }, [editorId]);
 
   // 是否挂载目录组件
   const catalogVisible = useMemo(() => {
@@ -341,21 +342,44 @@ export const useConfig = (props: EditorProps) => {
   } = props;
 
   const highlight = useMemo(() => {
-    const highlightConfig = configOption?.editorExtensions?.highlight;
+    const hljsUrls = configOption.editorExtensions.highlight;
+    const hljsAttrs = configOption.editorExtensionsAttrs.highlight;
 
+    // 链接
+    const { js: jsUrl } = hljsUrls!;
     const cssList = {
       ...codeCss,
-      ...highlightConfig?.css
+      ...hljsUrls!.css
     };
+
+    // 属性
+    const { js: jsAttrs, css: cssAttrs = {} } = hljsAttrs || {};
 
     const _theme =
       codeStyleReverse && codeStyleReverseList.includes(previewTheme)
         ? 'dark'
         : (theme as Themes);
 
+    // 找到对应代码主题的链接和属性
+    const codeCssHref = cssList[codeTheme]
+      ? cssList[codeTheme][_theme]
+      : codeCss.atom[_theme];
+    const codeCssAttrs =
+      cssList[codeTheme] && cssAttrs[codeTheme]
+        ? cssAttrs[codeTheme][_theme]
+        : cssAttrs['atom']
+          ? cssAttrs['atom'][_theme]
+          : {};
+
     return {
-      js: highlightConfig?.js || highlightUrl,
-      css: cssList[codeTheme] ? cssList[codeTheme][_theme] : codeCss.atom[_theme]
+      js: {
+        src: jsUrl,
+        ...jsAttrs
+      },
+      css: {
+        href: codeCssHref,
+        ...codeCssAttrs
+      }
     };
   }, [codeStyleReverse, codeStyleReverseList, previewTheme, theme, codeTheme]);
 
@@ -363,7 +387,7 @@ export const useConfig = (props: EditorProps) => {
   const usedLanguageText = useMemo(() => {
     const allText: any = {
       ...staticTextDefault,
-      ...configOption?.editorConfig?.languageUserDefined
+      ...configOption.editorConfig.languageUserDefined
     };
 
     if (allText[language]) {
@@ -377,21 +401,77 @@ export const useConfig = (props: EditorProps) => {
     pageFullscreen,
     fullscreen: false,
     preview: preview,
-    htmlPreview: preview ? false : htmlPreview
+    htmlPreview: preview ? false : htmlPreview,
+    previewOnly: false
   });
 
-  const updateSetting = useCallback((k: keyof typeof setting, v: boolean) => {
-    setSetting((_setting) => {
-      const nextSetting = {
-        ..._setting,
-        [k]: v === undefined ? !_setting[k] : v
-      } as SettingType;
+  const cacheSetting = useRef(setting);
 
-      if (k === 'preview' && nextSetting.preview) {
-        nextSetting.htmlPreview = false;
-      } else if (k === 'htmlPreview' && nextSetting.htmlPreview) {
-        nextSetting.preview = false;
+  const updateSetting = useCallback((k: keyof typeof setting, v: boolean) => {
+    const realValue = v === undefined ? !setting[k] : v;
+
+    setSetting((_setting) => {
+      const nextSetting: SettingType = {
+        ..._setting
+      };
+
+      switch (k) {
+        case 'preview': {
+          nextSetting.htmlPreview = false;
+          nextSetting.previewOnly = false;
+
+          break;
+        }
+
+        case 'htmlPreview': {
+          nextSetting.preview = false;
+          nextSetting.previewOnly = false;
+
+          break;
+        }
+
+        case 'previewOnly': {
+          if (realValue) {
+            if (!nextSetting.preview && !nextSetting.htmlPreview) {
+              // 如果没有显示预览模块，则需要手动展示
+              nextSetting.preview = true;
+            }
+          } else {
+            if (!cacheSetting.current.preview) {
+              nextSetting.preview = false;
+            }
+
+            if (!cacheSetting.current.htmlPreview) {
+              nextSetting.htmlPreview = false;
+            }
+          }
+
+          break;
+        }
       }
+
+      cacheSetting.current[k] = realValue;
+      nextSetting[k] = realValue;
+
+      // const nextSetting = {
+      //   ..._setting,
+      //   [k]: v === undefined ? !_setting[k] : v
+      // } as SettingType;
+
+      // if (k === 'preview') {
+      //   nextSetting.htmlPreview = false;
+      //   nextSetting.previewOnly = false;
+      // } else if (k === 'htmlPreview') {
+      //   nextSetting.preview = false;
+      //   nextSetting.previewOnly = false;
+      // } else if (
+      //   k === 'previewOnly' &&
+      //   !nextSetting.preview &&
+      //   !nextSetting.htmlPreview
+      // ) {
+      //   // 如果没有显示预览模块，则需要手动展示
+      //   nextSetting.preview = true;
+      // }
 
       return nextSetting;
     });
@@ -427,34 +507,34 @@ export const useExpose = (
   staticProps: StaticProps,
   catalogVisible: boolean,
   setting: SettingType,
-  updateSetting: UpdateSetting
+  updateSetting: UpdateSetting,
+  codeRef: MutableRefObject<ContentExposeParam | undefined>
 ) => {
   const { editorId } = staticProps;
 
   useEffect(() => {
     bus.emit(editorId, PAGE_FULL_SCREEN_CHANGED, setting.pageFullscreen);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [setting.pageFullscreen]);
+  }, [editorId, setting.pageFullscreen]);
 
   useEffect(() => {
     bus.emit(editorId, FULL_SCREEN_CHANGED, setting.fullscreen);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [setting.fullscreen]);
+  }, [editorId, setting.fullscreen]);
 
   useEffect(() => {
     bus.emit(editorId, PREVIEW_CHANGED, setting.preview);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [setting.preview]);
+  }, [editorId, setting.preview]);
+
+  useEffect(() => {
+    bus.emit(editorId, PREVIEW_ONLY_CHANGED, setting.previewOnly);
+  }, [editorId, setting.previewOnly]);
 
   useEffect(() => {
     bus.emit(editorId, HTML_PREVIEW_CHANGED, setting.htmlPreview);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [setting.htmlPreview]);
+  }, [editorId, setting.htmlPreview]);
 
   useEffect(() => {
     bus.emit(editorId, CATALOG_VISIBLE_CHANGED, catalogVisible);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [catalogVisible]);
+  }, [catalogVisible, editorId]);
 
   useImperativeHandle(
     editorRef,
@@ -488,6 +568,17 @@ export const useExpose = (
                 name: PREVIEW_CHANGED,
                 callback(status: boolean) {
                   (callBack as ExposeEvent['preview'])(status);
+                }
+              });
+
+              break;
+            }
+
+            case 'previewOnly': {
+              bus.on(editorId, {
+                name: PREVIEW_ONLY_CHANGED,
+                callback(status: boolean) {
+                  (callBack as ExposeEvent['previewOnly'])(status);
                 }
               });
 
@@ -530,6 +621,9 @@ export const useExpose = (
         togglePreview(status) {
           updateSetting('preview', status);
         },
+        togglePreviewOnly(status) {
+          updateSetting('previewOnly', status);
+        },
         toggleHtmlPreview(status) {
           updateSetting('htmlPreview', status);
         },
@@ -543,13 +637,27 @@ export const useExpose = (
           bus.emit(editorId, REPLACE, 'universal', { generate });
         },
         focus(options: FocusOption) {
-          bus.emit(editorId, TEXTAREA_FOCUS, options);
+          codeRef.current?.focus(options);
+        },
+        rerender() {
+          bus.emit(editorId, RERENDER);
+        },
+        getSelectedText() {
+          return codeRef.current?.getSelectedText();
+        },
+        resetHistory() {
+          codeRef.current?.resetHistory();
+        },
+        domEventHandlers(handlers) {
+          bus.emit(editorId, EVENT_LISTENER, handlers);
+        },
+        execCommand(direct) {
+          bus.emit(editorId, REPLACE, direct);
         }
       };
 
       return exposeParam;
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [updateSetting]
+    [codeRef, editorId, updateSetting]
   );
 };

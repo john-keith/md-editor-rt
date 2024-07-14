@@ -2,13 +2,14 @@ import React, { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
 import {
   MdEditor,
-  NormalToolbar,
   DropdownToolbar,
   ModalToolbar,
   MdCatalog,
   config,
-  ExposeParam
+  ExposeParam,
+  editorExtensionsAttrs
 } from '~~/index';
+
 // import Editor from '../../lib/md-editor-rt.es';
 import mdText from '../data.md';
 import { Theme } from '../App';
@@ -21,6 +22,7 @@ import Icon from '~/components/Icon';
 // import { Extension } from '@codemirror/state';
 import { lineNumbers } from '@codemirror/view';
 import { CompletionSource } from '@codemirror/autocomplete';
+import Normal from './Normal';
 // import screenfull from 'screenfull';
 // import katex from 'katex';
 // import 'katex/dist/katex.min.css';
@@ -37,90 +39,100 @@ import { CompletionSource } from '@codemirror/autocomplete';
 
 // import { cdnBase } from '../../MdEditor/config';
 
-config({
-  codeMirrorExtensions(theme, extensions) {
-    // console.log(theme, extensions, keyBindings);
+console.log(
+  config({
+    codeMirrorExtensions(theme, extensions) {
+      // console.log(theme, extensions, keyBindings);
 
-    // return extensions;
-    return [...extensions, lineNumbers()];
-  },
-  // iconfontType: 'class',
-  // markdownItConfig: (mdit) => {
-  // mdit.use(ancher, {
-  //   permalink: true
-  // });
-  // mdit.use(TargetBlankExtension);
-  // },
-  // markdownItPlugins(plugins) {
-  //   console.log(plugins);
-  //   return [];
-  // },
-  editorExtensions: {
-    //     prettier: {
-    //       prettierInstance: prettier,
-    //       parserMarkdownInstance: parserMarkdown
-    //     },
-    // highlight: {
-    // instance: highlight
-    //     // css: {
-    //     //   'tokyo-night': {
-    //     //     light: `${cdnBase}/highlight.js/11.5.1/styles/tokyo-night-light.min.css`,
-    //     //     dark: `${cdnBase}/highlight.js/11.5.1/styles/tokyo-night-dark.min.css`
-    //     //   }
-    //     // }
-    // }
-    //     screenfull: {
-    //       instance: screenfull
-    //     },
-    //     katex: {
-    //       instance: katex
-    //     },
-    //     cropper: {
-    //       instance: Cropper
-    //     },
-    // mermaid: {
-    //   instance: mermaid
-    // }
-  }
-  //   editorConfig: {
-  //     mermaidTemplate: {
-  //       /**
-  //        * 流程图
-  //        */
-  //       flow: 'flow',
-  //       /**
-  //        * 时序图
-  //        */
-  //       sequence: 'sequence',
-  //       /**
-  //        * 甘特图
-  //        */
-  //       gantt: 'gantt',
-  //       /**
-  //        * 类图
-  //        */
-  //       class: 'class',
-  //       /**
-  //        * 状态图
-  //        */
-  //       state: 'state',
-  //       /**
-  //        * 饼图
-  //        */
-  //       pie: 'pie',
-  //       /**
-  //        * 关系图
-  //        */
-  //       relationship: 'relationship',
-  //       /**
-  //        * 旅程图
-  //        */
-  //       journey: 'journey'
-  //     }
-  //   }
-});
+      // return extensions;
+      return [...extensions, lineNumbers()];
+    },
+    // iconfontType: 'class',
+    // markdownItConfig: (mdit) => {
+    // mdit.use(ancher, {
+    //   permalink: true
+    // });
+    // mdit.use(TargetBlankExtension);
+    // },
+    // markdownItPlugins(plugins) {
+    //   console.log(plugins);
+    //   return [];
+    // },
+    mermaidConfig: (base) => {
+      return base;
+    },
+    editorExtensions: {
+      //     prettier: {
+      //       prettierInstance: prettier,
+      //       parserMarkdownInstance: parserMarkdown
+      //     },
+      // highlight: {
+      // instance: highlight
+      //     // css: {
+      //     //   'tokyo-night': {
+      //     //     light: `${cdnBase}/highlight.js/11.5.1/styles/tokyo-night-light.min.css`,
+      //     //     dark: `${cdnBase}/highlight.js/11.5.1/styles/tokyo-night-dark.min.css`
+      //     //   }
+      //     // }
+      // }
+      //     screenfull: {
+      //       instance: screenfull
+      //     },
+      //     katex: {
+      //       instance: katex
+      //     },
+      //     cropper: {
+      //       instance: Cropper
+      //     },
+      // mermaid: {
+      //   instance: mermaid
+      // }
+    },
+    editorExtensionsAttrs,
+    editorConfig: {
+      zIndex: 2000
+    }
+    //   editorConfig: {
+    //     mermaidTemplate: {
+    //       /**
+    //        * 流程图
+    //        */
+    //       flow: 'flow',
+    //       /**
+    //        * 时序图
+    //        */
+    //       sequence: 'sequence',
+    //       /**
+    //        * 甘特图
+    //        */
+    //       gantt: 'gantt',
+    //       /**
+    //        * 类图
+    //        */
+    //       class: 'class',
+    //       /**
+    //        * 状态图
+    //        */
+    //       state: 'state',
+    //       /**
+    //        * 饼图
+    //        */
+    //       pie: 'pie',
+    //       /**
+    //        * 关系图
+    //        */
+    //       relationship: 'relationship',
+    //       /**
+    //        * 旅程图
+    //        */
+    //       journey: 'journey'
+    //     }
+    //   }
+  })
+);
 
 const SAVE_KEY = 'XHMPGLJIZTDB';
+const INPUT_BOX_WITDH = 'tcxll8alg5jx52hw';
 
 interface PreviewProp {
   theme: Theme;
@@ -141,7 +153,8 @@ export default ({ theme, previewTheme, codeTheme, lang }: PreviewProp) => {
       text2: 'Hello world',
       visible: false,
       modalVisible: false,
-      isFullscreen: false
+      isFullscreen: false,
+      inputBoxWitdh: localStorage.getItem(INPUT_BOX_WITDH) ?? undefined
     };
   });
 
@@ -194,6 +207,10 @@ export default ({ theme, previewTheme, codeTheme, lang }: PreviewProp) => {
       console.log('preview', status);
     });
 
+    editorRef.current?.on('previewOnly', (status) => {
+      console.log('previewOnly', status);
+    });
+
     editorRef.current?.on('htmlPreview', (status) => {
       console.log('htmlPreview', status);
     });
@@ -209,6 +226,12 @@ export default ({ theme, previewTheme, codeTheme, lang }: PreviewProp) => {
     editorRef.current?.on('catalog', (status) => {
       console.log('catalog', status);
     });
+
+    editorRef.current?.domEventHandlers({
+      compositionstart: () => {
+        console.log('compositionstart');
+      }
+    });
   }, []);
 
   return (
@@ -222,11 +245,7 @@ export default ({ theme, previewTheme, codeTheme, lang }: PreviewProp) => {
           right: '10px'
         }}
       >
-        <MdCatalog
-          theme={theme}
-          editorId="md-editor-preview"
-          mdHeadingId={markedHeadingId}
-        />
+        <MdCatalog theme={theme} editorId="md-prev" mdHeadingId={markedHeadingId} />
       </div>
       <button
         style={{
@@ -239,6 +258,7 @@ export default ({ theme, previewTheme, codeTheme, lang }: PreviewProp) => {
           // editorRef.current?.toggleFullscreen();
           // editorRef.current?.togglePageFullscreen();
           // editorRef.current?.toggleCatalog();
+          // editorRef.current?.togglePreviewOnly();
           // editorRef.current?.toggleHtmlPreview();
           // editorRef.current?.togglePreview();
           // editorRef.current?.triggerSave();
@@ -250,17 +270,22 @@ export default ({ theme, previewTheme, codeTheme, lang }: PreviewProp) => {
           //     deviationEnd: 0
           //   };
           // });
-          editorRef.current?.focus({
-            rangeAnchor: 1000,
-            rangeHead: 1001,
-            cursorPos: 1003
-          });
+          // editorRef.current?.rerender();
+          // console.log(editorRef.current?.getSelectedText());
+          // editorRef.current?.resetHistory();
+          // editorRef.current?.focus({
+          //   rangeAnchor: 1000,
+          //   rangeHead: 1001,
+          //   cursorPos: 1003
+          // });
+          editorRef.current?.execCommand('katexBlock');
         }}
       >
         1
       </button>
       <div className="container">
         <MdEditor
+          editorId="md-prev"
           completions={completions}
           ref={editorRef}
           theme={theme}
@@ -274,7 +299,7 @@ export default ({ theme, previewTheme, codeTheme, lang }: PreviewProp) => {
           // toolbarsExclude={['github']}
           // noPrettier
           // tabWidth={4}
-          showCodeRowNumber
+          // showCodeRowNumber
           // tableShape={[10, 10]}
           // noMermaid
           // placeholder="placeholder"
@@ -291,33 +316,68 @@ export default ({ theme, previewTheme, codeTheme, lang }: PreviewProp) => {
           // maxLength={10}
           // noHighlight
           // autoDetectCode
-          // onHtmlChanged={console.log}
+          // onHtmlChanged={(html: string) => {
+          //   console.log(html);
+          // }}
           // onBlur={console.log}
           // onFocus={console.log}
-          editorId="md-editor-preview"
           // showToolbarName
           // onInput={console.log}
           // onError={console.log}
-          // noImgZoomIn
-          // customIcon={{
-          //   bold: {
-          //     component: 'A',
-          //     props: {}
-          //   },
-          //   copy: '<i class="fa fa-car"></i>',
-          //   preview: {
-          //     component: '<i class="fa fa-car"></i>',
-          //     props: {
-          //       name: 'copy'
-          //     }
-          //   },
-          //   github: {
-          //     component: Icon,
-          //     props: {
-          //       name: 'italic'
-          //     }
-          //   }
+          // codeFoldable={false}
+          // autoFoldThreshold={2}
+          // transformImgUrl={(t) => {
+          //   console.log(t);
+
+          //   return Promise.resolve(
+          //     'https://imzbf.github.io/md-editor-rt/imgs/preview-light.png'
+          //   );
           // }}
+          // noImgZoomIn
+          customIcon={
+            {
+              // bold: {
+              //   component: 'A',
+              //   props: {}
+              // },
+              // copy: StrIcon('copy', {}) // '<i class="fa fa-car"></i>',
+              // preview: {
+              //   component: '<i class="fa fa-car"></i>',
+              //   props: {
+              //     name: 'copy'
+              //   }
+              // },
+              // github: {
+              //   component: Icon,
+              //   props: {
+              //     name: 'italic'
+              //   }
+              // }
+            }
+          }
+          inputBoxWitdh={md.inputBoxWitdh}
+          onInputBoxWitdhChange={(w) => {
+            md.inputBoxWitdh = w;
+            localStorage.setItem(INPUT_BOX_WITDH, w);
+          }}
+          onDrop={async (e) => {
+            e.stopPropagation();
+
+            const form = new FormData();
+            form.append('file', e.dataTransfer?.files[0] as any);
+
+            const res = await axios.post('/api/img/upload', form, {
+              headers: {
+                'Content-Type': 'multipart/form-data'
+              }
+            });
+
+            editorRef.current?.insert(() => {
+              return {
+                targetValue: `![](${res.data.url})`
+              };
+            });
+          }}
           toolbars={[
             'bold',
             'underline',
@@ -351,16 +411,13 @@ export default ({ theme, previewTheme, codeTheme, lang }: PreviewProp) => {
             'pageFullscreen',
             'fullscreen',
             'preview',
+            'previewOnly',
             'htmlPreview',
             'catalog',
             'github'
           ]}
           defToolbars={[
-            <NormalToolbar
-              trigger={<Icon name="strike-through" />}
-              onClick={console.log}
-              key="dddd"
-            ></NormalToolbar>,
+            <Normal key="ddd1" />,
             <DropdownToolbar
               visible={defVisible}
               trigger={<Icon name="strike-through" />}
@@ -416,7 +473,7 @@ export default ({ theme, previewTheme, codeTheme, lang }: PreviewProp) => {
               text: value
             })
           }
-          onUploadImg={async (files: Array<File>, callback: (urls: string[]) => void) => {
+          onUploadImg={async (files, callback) => {
             const res = await Promise.all(
               files.map((file) => {
                 return new Promise((rev, rej) => {
@@ -435,7 +492,13 @@ export default ({ theme, previewTheme, codeTheme, lang }: PreviewProp) => {
               })
             );
 
-            callback(res.map((item: any) => item.data.url));
+            callback(
+              res.map((item: any) => ({
+                url: item.data.url,
+                alt: 'alt',
+                title: 'title'
+              }))
+            );
           }}
           formatCopiedText={(text: string) => {
             return `${text} \nfrom @imzbf`;

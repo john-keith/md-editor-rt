@@ -1,3 +1,5 @@
+import { prefix } from '../config';
+
 /**
  * 转换base64为file对象
  * 方法来自网络
@@ -43,7 +45,7 @@ export const generateCodeRowNumber = (code: string) => {
     rowNumberList.push('<span></span>');
   });
   rowNumberList.push('</span>');
-  return `<span class="code-block">${code}</span>${rowNumberList.join('')}`;
+  return `<span class="${prefix}-code-block">${code}</span>${rowNumberList.join('')}`;
 };
 
 /**
@@ -128,9 +130,23 @@ export const getRelativeTop = (element: HTMLElement, container: HTMLElement): nu
 };
 
 /**
- * 获取随机字符
- *
- * @returns string
+ * 获取递增的ID
  */
-export const uuid = (): string =>
-  `${Date.now().toString(36)}${Math.random().toString(36).substring(2)}`;
+export const getNextId = (() => {
+  let count = 0;
+
+  return (prefix: string) => {
+    return prefix + ++count;
+  };
+})();
+
+/**
+ * 获取递增的zIndex
+ */
+export const getZIndexIncrement = (() => {
+  let startIndex = 0;
+
+  return () => {
+    return ++startIndex;
+  };
+})();

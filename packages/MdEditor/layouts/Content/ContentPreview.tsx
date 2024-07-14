@@ -11,16 +11,17 @@ const ContentPreview = (props: ContentPreviewProps) => {
   const { editorId, previewTheme, showCodeRowNumber } = useContext(EditorContext);
 
   // markdown => html
-  const { html } = useMarkdownIt(props, !!previewOnly);
+  const { html, key } = useMarkdownIt(props, !!previewOnly);
   // 复制代码
-  useCopyCode(props, html);
+  useCopyCode(props, html, key);
   // 图片点击放大
   useZoom(props, html);
 
   const content = useMemo(() => {
     return (
-      <article
+      <div
         id={`${editorId}-preview`}
+        key={key}
         className={classnames([
           `${prefix}-preview`,
           `${previewTheme}-theme`,
@@ -29,23 +30,23 @@ const ContentPreview = (props: ContentPreviewProps) => {
         dangerouslySetInnerHTML={{ __html: html }}
       />
     );
-  }, [editorId, html, previewTheme, showCodeRowNumber]);
+  }, [editorId, html, key, previewTheme, showCodeRowNumber]);
 
   return (
     <>
-      <div
-        id={`${editorId}-preview-wrapper`}
-        className={`${prefix}-preview-wrapper`}
-        data-show={props.setting.preview}
-        key="content-preview-wrapper"
-      >
-        {content}
-      </div>
-      {!previewOnly && (
+      {props.setting.preview && (
+        <div
+          id={`${editorId}-preview-wrapper`}
+          className={`${prefix}-preview-wrapper`}
+          key="content-preview-wrapper"
+        >
+          {content}
+        </div>
+      )}
+      {!previewOnly && props.setting.htmlPreview && (
         <div
           id={`${editorId}-html-wrapper`}
           className={`${prefix}-preview-wrapper`}
-          data-show={props.setting.htmlPreview}
           key="html-preview-wrapper"
         >
           <div className={`${prefix}-html`}>{html}</div>
